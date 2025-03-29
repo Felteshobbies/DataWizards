@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35327.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataWizard", "DataWizard\DataWizard.csproj", "{9C0687BB-1033-41F4-AEDD-5900A67314CF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "libDataWizard", "libDataWizard\libDataWizard.csproj", "{83FC083E-128E-446B-A722-5ACAE94AF0BE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9C0687BB-1033-41F4-AEDD-5900A67314CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C0687BB-1033-41F4-AEDD-5900A67314CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C0687BB-1033-41F4-AEDD-5900A67314CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C0687BB-1033-41F4-AEDD-5900A67314CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{83FC083E-128E-446B-A722-5ACAE94AF0BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{83FC083E-128E-446B-A722-5ACAE94AF0BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{83FC083E-128E-446B-A722-5ACAE94AF0BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{83FC083E-128E-446B-A722-5ACAE94AF0BE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {299926E2-A7F8-4CDC-9DCF-5DE5EA4E8618}
+	EndGlobalSection
+EndGlobal
