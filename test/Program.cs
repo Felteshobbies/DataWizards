@@ -12,7 +12,7 @@ namespace test
         static void Main(string[] args)
         {
             CSV wiz = new CSV();
-            wiz.Load(@"C:\temp\test2.txt");
+            wiz.Load(@"C:\temp\test3.txt");
 
             Console.WriteLine(wiz.Separator);
             Console.WriteLine(wiz.SeparatorProbability);
