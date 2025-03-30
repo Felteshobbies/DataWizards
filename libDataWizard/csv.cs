@@ -49,8 +49,9 @@ namespace DataWizard
         {
             // charset detection
             DetectionResult detectionResult = CharsetDetector.DetectFromFile(path);
+            DetectedEncoding = detectionResult.Detected.Encoding;
 
-            using (StreamReader reader = new StreamReader(path, detectionResult.Detected.Encoding))
+            using (StreamReader reader = new StreamReader(path, DetectedEncoding ))
             {
                 Analyze(reader);
 
