@@ -1,15 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
-namespace libDataWizard
+
+namespace DataWizard
 {
-    public class DataWizard
+    public class CSV
     {
-        public event EventHandler   Update;
+        public event EventHandler Update;
+        public char[] Separators = new[] { ',', ';', '\t', '|' };
+        public char Separator ;
+        public double SeparatorProbability;
+        private int[] _separatorCount;
+        public int FieldCount;
+        public int StartLine;
+        public int EndLine;
+        public int Lines;
+        public int MaxLinesAnalyze = 100;
+        public bool isFieldCountEqual;
 
         protected virtual void OnUpdateEvent(UpdateEventArgs e)
         {
@@ -20,14 +35,99 @@ namespace libDataWizard
             }
         }
 
+        public CSV()
+        {
+            Clear();
+            _separatorCount = new int[Separators.Length];
+        }
+
         public void Load(String path)
         {
+            using (StreamReader reader = new StreamReader(path))
+            {
+                Analyze(reader);
+
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    // Zeilen verarbeiten
+                    Console.WriteLine(line);
+                }
+            }
+
+        }
+
+        public void Analyze(StreamReader reader)
+        {
+            var separatorCount = new Dictionary<char, int>();
+            // var fieldCount = new Dictionary<char, List<int>>();
+            foreach (char separator in Separators)
+            {
+               // fieldCount[separator] = new List<int>();
+                separatorCount[separator] = 0;
+            }
+       
+            bool isContent = false;
+            string line;
+            while ((line = reader.ReadLine()) != null && Lines < MaxLinesAnalyze)
+            {
+                // Empty lines?
+                Lines++;
+                if (!isContent && !String.IsNullOrWhiteSpace(line))
+                {
+                    StartLine = Lines;
+                    isContent = true;
+                }
+
+                if (isContent)
+                {
+                    // count separators
+                    foreach (char separator in Separators)
+                    {
+                        //int fc = line.Split(separator).Length;
+                        separatorCount[separator] += line.Count(c => c == separator);
+                    }
+                }
+            }
+
+            char bestSeparator = Separator;
+            int highestCount = 0;
+            int totalCount = 0;
+
+            foreach (var kvp in separatorCount)
+            {
+                totalCount += kvp.Value;
+                if (kvp.Value > highestCount)
+                {
+                    highestCount = kvp.Value;
+                    bestSeparator = kvp.Key;
+                }
+            }
+
+            // calculate probability percent
+            double probability = totalCount > 0  ? (highestCount / (double)totalCount) * 100 : 0;
+
+            Separator = bestSeparator;
+            SeparatorProbability = probability;
+
            
-        } 
+            // reset stream
+            reader.BaseStream.Seek(0, SeekOrigin.Begin);
+            reader.DiscardBufferedData();
+        }
 
 
 
-
+        public void Clear()
+        {
+            Separator = ';';
+            SeparatorProbability = 100;
+            FieldCount = 0;
+            StartLine = 0;
+            EndLine = 0;
+            Lines = 0;
+            isFieldCountEqual = true;
+        }
 
         public class UpdateEventArgs : EventArgs
         {

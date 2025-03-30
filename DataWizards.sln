@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataWizard", "DataWizard\Da
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "libDataWizard", "libDataWizard\libDataWizard.csproj", "{83FC083E-128E-446B-A722-5ACAE94AF0BE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "test", "test\test.csproj", "{571340BA-7DDA-40A5-A5F9-1F13BECAEBAA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{83FC083E-128E-446B-A722-5ACAE94AF0BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{83FC083E-128E-446B-A722-5ACAE94AF0BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{83FC083E-128E-446B-A722-5ACAE94AF0BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{571340BA-7DDA-40A5-A5F9-1F13BECAEBAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{571340BA-7DDA-40A5-A5F9-1F13BECAEBAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{571340BA-7DDA-40A5-A5F9-1F13BECAEBAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{571340BA-7DDA-40A5-A5F9-1F13BECAEBAA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
