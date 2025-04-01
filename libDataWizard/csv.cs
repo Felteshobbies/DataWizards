@@ -28,7 +28,7 @@ namespace DataWizard
         public bool DetectedHeaderLine;
         public Encoding DetectedEncoding = Encoding.UTF8;
 
-        private string fieldNames = "article part partno part-no price name id date plz ort street strasse email e-mail";
+        private string fieldNames = "no nr article part partno part-no price name id date plz ort street strasse email e-mail";
 
         protected virtual void OnUpdateEvent(UpdateEventArgs e)
         {
@@ -127,9 +127,6 @@ namespace DataWizard
             reader.DiscardBufferedData();
         }
 
-
-
-
         private bool IsHeader(string firstLine, string secondLine, char separator)
         {
             bool isHeader = true;
@@ -151,8 +148,6 @@ namespace DataWizard
             }
             return isHeader;
         }
-
-
 
         public void Clear()
         {
