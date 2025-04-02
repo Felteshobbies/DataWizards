@@ -1,0 +1,5 @@
+test1|tes_-#t2|test3
+"hüal|lo"|434|45.66
+"halßlo"|434|45.66
+"Ein Ährehallo"|434|45.66
+"höllo"|545.4|6

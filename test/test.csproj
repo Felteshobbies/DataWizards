@@ -55,5 +55,10 @@
       <Name>libDataWizard</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Samples\test.txt" />
+    <Content Include="Samples\test2.txt" />
+    <Content Include="Samples\test3.txt" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

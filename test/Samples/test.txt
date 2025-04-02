@@ -1,0 +1,5 @@
+test1;test2;test3
+"hal|lo";434;45.66
+"hall|o";434;45.66
+"ha,llo";434;45.66
+"hallo";545.4;6

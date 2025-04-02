@@ -1,0 +1,5 @@
+test1|test2|test3
+"hal|lo"|434|45.66
+"halßlo"|434|45.66
+"hallo"|434|45.66
+"haöllo"|545.4|6
