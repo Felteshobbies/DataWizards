@@ -137,10 +137,10 @@ namespace DataWizard
             while ((line = reader.ReadLine()) != null && Lines < MaxLinesAnalyze)
             {
                 Console.WriteLine(line);
-                string[] res = SplitLine(line, Separator);
-                foreach (string s in res)
+                Field[] res = SplitLine(line, Separator);
+                foreach (Field s in res)
                 {
-                    Console.WriteLine(s);
+                    Console.WriteLine(s.Quotes.ToString() + " "+ s.Value);
                 }
 
 
@@ -211,9 +211,9 @@ namespace DataWizard
 
 
 
-        public static string[] SplitLine(string line, char separator)
+        public Field[] SplitLine(string line, char separator)
         {
-            List<string> result = new List<string>();
+            List<Field> result = new List<Field>();
             int index = 0;
 
             while (index < line.Length)
@@ -227,8 +227,8 @@ namespace DataWizard
                         closingQuote = line.IndexOf('"', closingQuote + 2);
                     }
 
-                    if (closingQuote == -1) closingQuote = line.Length; // Kein schließendes Hochkomma gefunden
-                    result.Add(line.Substring(index + 1, closingQuote - index - 1));
+                    if (closingQuote == -1) closingQuote = line.Length; // Kein schließendes Hochkomma gefunden                   
+                    result.Add(new Field { Value = line.Substring(index + 1, closingQuote - index - 1), Quotes = true });
                     index = closingQuote + 1;
 
                     // Überspringe das Trennzeichen nach dem geschlossenen Hochkomma
@@ -244,7 +244,8 @@ namespace DataWizard
                     if (nextSeparator == -1) nextSeparator = line.Length;
 
                     // Füge den aktuellen Wert hinzu (auch leere Werte)
-                    result.Add(line.Substring(index, nextSeparator - index));
+                    string value = line.Substring(index, nextSeparator - index);
+                    result.Add(new Field { Value = value, Quotes = false });
                     index = nextSeparator + 1; // Überspringe das Trennzeichen
                 }
             }
@@ -252,7 +253,7 @@ namespace DataWizard
             // Berücksichtige abschließende leere Felder
             if (line.EndsWith(separator.ToString()))
             {
-                result.Add("");
+                result.Add(new Field { Value = "", Quotes = true });
             }
 
             return result.ToArray();
@@ -272,126 +273,19 @@ namespace DataWizard
 
     public class Field
     {
-        public int Index { get; set; }
-        public string Name { get; set; }
-        public string Value { get; set; }
-        public Type Type { get; set; }
+        public String Value { get; set; }
+        public Boolean Quotes { get; set; }
 
-        public Field() {
-            this.Type = typeof(String);
+        public Field()
+        {
+            this.Quotes = true;
         }
     }
+
+
 }
 
 
 
-public class CsvAnalyzer
-{
-    public class CsvProperties
-    {
-        public bool IsCSV { get; set; }
-        public char? Separator { get; set; }
-        public string Charset { get; set; }
-        public int FieldCount { get; set; }
-        public bool IsHeader { get; set; }
-        public List<string> HeaderFields { get; set; } = new List<string>();
-        public bool SkipFirst { get; set; }
-        public bool SkipLast { get; set; }
-        public Dictionary<int, string> FieldFormats { get; set; } = new Dictionary<int, string>();
-    }
 
-    public CsvProperties AnalyzeFile(string filePath)
-    {
-        var properties = new CsvProperties();
-
-        try
-        {
-            // Bestimme Charset
-            properties.Charset = DetectCharset(filePath);
-
-            // Lese Datei
-            var lines = File.ReadAllLines(filePath, Encoding.GetEncoding(properties.Charset));
-
-            if (lines.Length == 0)
-            {
-                properties.IsCSV = false;
-                return properties;
-            }
-
-            // Bestimme Trennzeichen
-            var possibleSeparators = new[] { ',', ';', '\t', '|' };
-            properties.Separator = DetectSeparator(lines, possibleSeparators);
-
-            // Prüfe CSV-Eigenschaften
-            properties.IsCSV = properties.Separator.HasValue;
-
-            if (!properties.IsCSV) return properties;
-
-            // Überprüfe Felder und Header
-            var firstLine = lines[0];
-            properties.FieldCount = firstLine.Split(properties.Separator.Value).Length;
-
-            // Header-Analyse
-            properties.IsHeader = IsValidHeader(firstLine, properties.Separator.Value);
-            if (properties.IsHeader)
-            {
-                properties.HeaderFields = firstLine.Split(properties.Separator.Value).ToList();
-            }
-
-            // Überspringe ungültige Zeilen
-            properties.SkipFirst = !properties.IsHeader;
-            properties.SkipLast = lines.Any(line => string.IsNullOrWhiteSpace(line));
-
-            // Bestimme Feldformate
-            properties.FieldFormats = DetectFieldFormats(lines.Skip(properties.SkipFirst ? 1 : 0).ToArray(), properties.Separator.Value);
-
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Fehler bei der Analyse: {ex.Message}");
-        }
-
-        return properties;
-    }
-
-    private string DetectCharset(string filePath)
-    {
-        // Beispiel für die Charset-Erkennung (Vereinfacht)
-        return "UTF-8"; // Annahme: UTF-8, kann erweitert werden
-    }
-
-    private char? DetectSeparator(string[] lines, char[] possibleSeparators)
-    {
-        foreach (var separator in possibleSeparators)
-        {
-            if (lines.All(line => line.Contains(separator)))
-            {
-                return separator;
-            }
-        }
-        return null;
-    }
-
-    private bool IsValidHeader(string line, char separator)
-    {
-        return line.Split(separator).All(field => !string.IsNullOrWhiteSpace(field));
-    }
-
-    private Dictionary<int, string> DetectFieldFormats(string[] lines, char separator)
-    {
-        var fieldFormats = new Dictionary<int, string>();
-        foreach (var line in lines)
-        {
-            var fields = line.Split(separator);
-            for (int i = 0; i < fields.Length; i++)
-            {
-                if (!fieldFormats.ContainsKey(i))
-                {
-                    fieldFormats[i] = fields[i].StartsWith("\"") && fields[i].EndsWith("\"") ? "String" : "Unknown";
-                }
-            }
-        }
-        return fieldFormats;
-    }
-}
 
