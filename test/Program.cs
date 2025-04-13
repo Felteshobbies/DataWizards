@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DataWizard;
+using libDataWizard;
 
 namespace test
 {
@@ -17,7 +18,14 @@ namespace test
             Console.WriteLine(wiz.Separator);
             Console.WriteLine(wiz.SeparatorProbability);
             Console.WriteLine(wiz.StartLine);
+            XLS xls = new XLS(@"c:\temp\test.xlsx", true);
+
+
+
             Console.ReadKey();
+
+
+
         }
     }
 }

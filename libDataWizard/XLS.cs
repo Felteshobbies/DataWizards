@@ -2,6 +2,7 @@
 using DocumentFormat.OpenXml.Spreadsheet;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,17 +12,19 @@ namespace libDataWizard
 {
     public class XLS
     {
+        public Boolean overwrite { get; set; }
+        public string filePath { get; set; }
 
-
-    }
-
-
-
-
-    public class ExcelCreator
-    {
-        public void CreateExcelFile(string filePath)
+        public XLS(string filePath, bool overwrite)
         {
+            this.filePath = filePath;
+            this.overwrite = overwrite;
+
+            if (File.Exists(filePath) && !overwrite)
+            {
+                throw new Exception("File exists.");               
+            } 
+
             using (SpreadsheetDocument document = SpreadsheetDocument.Create(filePath, DocumentFormat.OpenXml.SpreadsheetDocumentType.Workbook))
             {
                 // Workbook und Worksheet erstellen
@@ -47,7 +50,7 @@ namespace libDataWizard
                 Row row1 = new Row();
                 row1.Append(CreateTextCell("Text in Zelle A1"));
                 row1.Append(CreateTextCell("Text in Zelle B1"));
-                
+
                 sheetData.Append(row1);
 
                 Row row2 = new Row();
@@ -58,6 +61,7 @@ namespace libDataWizard
                 workbookPart.Workbook.Save();
             }
         }
+
 
         private Cell CreateTextCell(string cellValue)
         {
@@ -74,6 +78,9 @@ namespace libDataWizard
     }
 
 
+
+
+  
 
 
 }

@@ -1,5 +1,7 @@
-﻿using System;
+﻿using libDataWizard;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data;
 using System.Globalization;
 using System.IO;
@@ -13,6 +15,8 @@ namespace DataWizard
 {
     public class CSV
     {
+        public string filePath { get; set; }
+
         public event EventHandler Update;
         public char[] Separators = new[] { ',', ';', '\t', '|' };
         public char Separator;
@@ -45,22 +49,24 @@ namespace DataWizard
             _separatorCount = new int[Separators.Length];
         }
 
-        public void Load(String path)
+        public void Load(String filePath)
         {
+            this.filePath = filePath;
+
             // charset detection
-            DetectionResult detectionResult = CharsetDetector.DetectFromFile(path);
+            DetectionResult detectionResult = CharsetDetector.DetectFromFile(this.filePath);
             DetectedEncoding = detectionResult.Detected.Encoding;
 
-            using (StreamReader reader = new StreamReader(path, DetectedEncoding ))
+            using (StreamReader reader = new StreamReader(this.filePath, DetectedEncoding))
             {
                 Analyze(reader);
 
-                string line;
-                while ((line = reader.ReadLine()) != null)
-                {
-                    var col = line.Split(Separator);
-                    Console.WriteLine(col[0]);
-                }
+                //string line;
+                //while ((line = reader.ReadLine()) != null)
+                //{
+                //    var col = line.Split(Separator);
+                //    Console.WriteLine(col[0]);
+                //}
             }
         }
 
@@ -122,9 +128,23 @@ namespace DataWizard
             // detect for headerline
             DetectedHeaderLine = IsHeader(firstLine, secondline, Separator);
 
+
+
             // reset stream
             reader.BaseStream.Seek(0, SeekOrigin.Begin);
             reader.DiscardBufferedData();
+
+            while ((line = reader.ReadLine()) != null && Lines < MaxLinesAnalyze)
+            {
+                Console.WriteLine(line);
+                string[] res = SplitLine(line, Separator);
+                foreach (string s in res)
+                {
+                    Console.WriteLine(s);
+                }
+
+
+            }
         }
 
         private bool IsHeader(string firstLine, string secondLine, char separator)
@@ -161,6 +181,23 @@ namespace DataWizard
             DetectedHeaderLine = false;
         }
 
+        public void WriteXLSX(bool overwrite)
+        {
+            XLS xls = new XLS(this.filePath, overwrite);
+
+            using (StreamReader reader = new StreamReader(this.filePath, DetectedEncoding))
+            {
+
+
+                //string line;
+                //while ((line = reader.ReadLine()) != null)
+                //{
+                //    var col = line.Split(Separator);
+                //    Console.WriteLine(col[0]);
+                //}
+            }
+        }
+
         public class UpdateEventArgs : EventArgs
         {
             public string Text;
@@ -170,6 +207,78 @@ namespace DataWizard
                 this.Text = text;
             }
 
+        }
+
+
+
+        public static string[] SplitLine(string line, char separator)
+        {
+            List<string> result = new List<string>();
+            int index = 0;
+
+            while (index < line.Length)
+            {
+                if (line[index] == '"') // Falls das Feld mit Hochkommata beginnt
+                {
+                    int closingQuote = line.IndexOf('"', index + 1);
+                    while (closingQuote != -1 && closingQuote + 1 < line.Length && line[closingQuote + 1] == '"')
+                    {
+                        // Doppelte Hochkommata (escaped quotes) überspringen
+                        closingQuote = line.IndexOf('"', closingQuote + 2);
+                    }
+
+                    if (closingQuote == -1) closingQuote = line.Length; // Kein schließendes Hochkomma gefunden
+                    result.Add(line.Substring(index + 1, closingQuote - index - 1));
+                    index = closingQuote + 1;
+
+                    // Überspringe das Trennzeichen nach dem geschlossenen Hochkomma
+                    if (index < line.Length && line[index] == separator)
+                    {
+                        index++;
+                    }
+                }
+                else
+                {
+                    // Suche nach dem nächsten Trennzeichen
+                    int nextSeparator = line.IndexOf(separator, index);
+                    if (nextSeparator == -1) nextSeparator = line.Length;
+
+                    // Füge den aktuellen Wert hinzu (auch leere Werte)
+                    result.Add(line.Substring(index, nextSeparator - index));
+                    index = nextSeparator + 1; // Überspringe das Trennzeichen
+                }
+            }
+
+            // Berücksichtige abschließende leere Felder
+            if (line.EndsWith(separator.ToString()))
+            {
+                result.Add("");
+            }
+
+            return result.ToArray();
+        }
+
+
+
+
+
+
+
+
+
+
+
+    }
+
+    public class Field
+    {
+        public int Index { get; set; }
+        public string Name { get; set; }
+        public string Value { get; set; }
+        public Type Type { get; set; }
+
+        public Field() {
+            this.Type = typeof(String);
         }
     }
 }
