@@ -362,7 +362,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📧 Contact
 
-Project Link: [https://github.com/yourusername/DataWizard](https://github.com/yourusername/DataWizard)
+Project Link: [https://github.com/Felteshobbies/DataWizard](https://github.com/Felteshobbies/DataWizard)
 
 ## 🙏 Acknowledgments
 
