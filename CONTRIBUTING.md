@@ -368,13 +368,6 @@ git add .
 git rebase --continue
 ```
 
-## 📧 Contact
-
-Questions? Suggestions?
-
-- **GitHub Issues**: [Create an issue](https://github.com/yourusername/DataWizard/issues)
-- **Pull Requests**: [Submit a PR](https://github.com/yourusername/DataWizard/pulls)
-- **Discussions**: [Start a discussion](https://github.com/yourusername/DataWizard/discussions)
 
 ## 📜 License
 
