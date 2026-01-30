@@ -1,6 +1,6 @@
 # DataWizard
 
-**Professional CSV ↔ Excel conversion library for .NET**
+** CSV ↔ Excel conversion library for .NET**
 
 DataWizard is a powerful C# library for intelligent CSV and Excel file handling with automatic data type detection, configurable field recognition, and robust encoding support.
 
