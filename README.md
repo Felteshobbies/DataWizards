@@ -1,4 +1,4 @@
-# DataWizard
+# DataWizards
 
 ** CSV ↔ Excel conversion library for .NET**
 
