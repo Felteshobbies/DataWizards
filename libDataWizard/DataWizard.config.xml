@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DataWizardConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <!-- Header-Feldnamen für automatische Header-Erkennung -->
+  <HeaderFieldNames>
+    <!-- IDs und Nummern (mit Regex) -->
+    <Field Pattern="^id$" IsRegex="true" />
+    <Field Pattern="^nr$" IsRegex="true" />
+    <Field Pattern="^no$" IsRegex="true" />
+    <Field Pattern=".*id$" IsRegex="true" />
+    
+    <!-- Artikel/Produkt -->
+    <Field Pattern="artikel" IsRegex="false" />
+    <Field Pattern="article" IsRegex="false" />
+    <Field Pattern="produkt" IsRegex="false" />
+    <Field Pattern="product" IsRegex="false" />
+    <Field Pattern="part" IsRegex="false" />
+    <Field Pattern="sku" IsRegex="false" />
+    
+    <!-- Namen -->
+    <Field Pattern="name" IsRegex="false" />
+    <Field Pattern="bezeichnung" IsRegex="false" />
+    <Field Pattern="description" IsRegex="false" />
+    
+    <!-- Preis/Finanz -->
+    <Field Pattern="preis" IsRegex="false" />
+    <Field Pattern="price" IsRegex="false" />
+    <Field Pattern="betrag" IsRegex="false" />
+    <Field Pattern="amount" IsRegex="false" />
+    
+    <!-- Datum -->
+    <Field Pattern="datum" IsRegex="false" />
+    <Field Pattern="date" IsRegex="false" />
+    
+    <!-- Adressen -->
+    <Field Pattern="strasse" IsRegex="false" />
+    <Field Pattern="street" IsRegex="false" />
+    <Field Pattern="ort" IsRegex="false" />
+    <Field Pattern="city" IsRegex="false" />
+    <Field Pattern="plz" IsRegex="false" />
+    <Field Pattern="zip" IsRegex="false" />
+    
+    <!-- Kontakt -->
+    <Field Pattern="email" IsRegex="false" />
+    <Field Pattern="e-mail" IsRegex="false" />
+    <Field Pattern="telefon" IsRegex="false" />
+    <Field Pattern="phone" IsRegex="false" />
+    
+    <!-- Mengen -->
+    <Field Pattern="menge" IsRegex="false" />
+    <Field Pattern="quantity" IsRegex="false" />
+    <Field Pattern="anzahl" IsRegex="false" />
+  </HeaderFieldNames>
+  
+  <!-- Datentyp-Überschreibungen -->
+  <DataTypeOverrides>
+    <!-- IDs immer als Text (führende Nullen beibehalten) -->
+    <Override FieldNamePattern="^id$" IsRegex="true" DataType="Text" />
+    <Override FieldNamePattern=".*id$" IsRegex="true" DataType="Text" />
+    <Override FieldNamePattern="kundennummer" IsRegex="false" DataType="Text" />
+    <Override FieldNamePattern="customerno" IsRegex="false" DataType="Text" />
+    
+    <!-- Preise als Decimal -->
+    <Override FieldNamePattern="preis" IsRegex="false" DataType="Decimal" />
+    <Override FieldNamePattern="price" IsRegex="false" DataType="Decimal" />
+    <Override FieldNamePattern="betrag" IsRegex="false" DataType="Decimal" />
+    <Override FieldNamePattern="amount" IsRegex="false" DataType="Decimal" />
+    
+    <!-- Mengen als Integer -->
+    <Override FieldNamePattern="menge" IsRegex="false" DataType="Integer" />
+    <Override FieldNamePattern="quantity" IsRegex="false" DataType="Integer" />
+    <Override FieldNamePattern="anzahl" IsRegex="false" DataType="Integer" />
+    
+    <!-- Datum-Felder -->
+    <Override FieldNamePattern="datum" IsRegex="false" DataType="Date" />
+    <Override FieldNamePattern="date" IsRegex="false" DataType="Date" />
+    <Override FieldNamePattern="geburtsdatum" IsRegex="false" DataType="Date" />
+    
+    <!-- PLZ immer als Text (führende Nullen!) -->
+    <Override FieldNamePattern="plz" IsRegex="false" DataType="Text" />
+    <Override FieldNamePattern="postleitzahl" IsRegex="false" DataType="Text" />
+    <Override FieldNamePattern="zip" IsRegex="false" DataType="Text" />
+  </DataTypeOverrides>
+</DataWizardConfig>

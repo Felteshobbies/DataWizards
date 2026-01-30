@@ -1,4 +1,4 @@
-﻿using libDataWizard;
+using libDataWizard;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -32,6 +32,10 @@ namespace DataWizard
         public bool DetectedHeaderLine;
         public Encoding DetectedEncoding = Encoding.UTF8;
 
+        // Konfiguration für Feldnamen und Datentypen
+        public DataWizardConfig Config { get; set; }
+        private string[] headerFieldNames; // Erkannte Header-Feldnamen
+
         private string fieldNames = "no nr article part partno part-no price name id date plz ort street strasse email e-mail";
 
         protected virtual void OnUpdateEvent(UpdateEventArgs e)
@@ -47,6 +51,42 @@ namespace DataWizard
         {
             Clear();
             _separatorCount = new int[Separators.Length];
+            
+            // Lade Standard-Konfiguration
+            LoadDefaultConfig();
+        }
+
+        public CSV(string configPath)
+        {
+            Clear();
+            _separatorCount = new int[Separators.Length];
+            
+            // Lade Konfiguration aus Datei
+            LoadConfig(configPath);
+        }
+
+        /// <summary>
+        /// Lädt die Standard-Konfiguration
+        /// </summary>
+        private void LoadDefaultConfig()
+        {
+            Config = DataWizardConfig.CreateDefault();
+        }
+
+        /// <summary>
+        /// Lädt Konfiguration aus einer XML-Datei
+        /// </summary>
+        public void LoadConfig(string configPath)
+        {
+            try
+            {
+                Config = DataWizardConfig.Load(configPath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Fehler beim Laden der Konfiguration: {ex.Message}");
+                LoadDefaultConfig();
+            }
         }
 
         public void Load(String filePath)
@@ -60,13 +100,6 @@ namespace DataWizard
             using (StreamReader reader = new StreamReader(this.filePath, DetectedEncoding))
             {
                 Analyze(reader);
-
-                //string line;
-                //while ((line = reader.ReadLine()) != null)
-                //{
-                //    var col = line.Split(Separator);
-                //    Console.WriteLine(col[0]);
-                //}
             }
         }
 
@@ -75,9 +108,9 @@ namespace DataWizard
             string firstLine = "";
             string secondline = "";
 
-
             var separatorCount = new Dictionary<char, int>();
-            // var fieldCount = new Dictionary<char, List<int>>();
+            var fieldCountList = new List<int>(); // Speichert die Anzahl der Felder pro Zeile
+
             foreach (char separator in Separators)
             {
                 separatorCount[separator] = 0;
@@ -85,14 +118,23 @@ namespace DataWizard
 
             bool isContent = false;
             string line;
-            while ((line = reader.ReadLine()) != null && Lines < MaxLinesAnalyze)
+            int lineCounter = 0; // Separater Zähler für die erste Schleife
+
+            // Erste Schleife: Separator-Erkennung
+            while ((line = reader.ReadLine()) != null && lineCounter < MaxLinesAnalyze)
             {
+                lineCounter++;
+                
                 // Empty lines?
-                Lines++;
                 if (!isContent && !String.IsNullOrWhiteSpace(line))
                 {
-                    StartLine = Lines;
+                    StartLine = lineCounter;
                     isContent = true;
+                    firstLine = line; // Erste Zeile mit Inhalt speichern
+                }
+                else if (isContent && String.IsNullOrWhiteSpace(firstLine) == false && String.IsNullOrWhiteSpace(secondline))
+                {
+                    secondline = line; // Zweite Zeile mit Inhalt speichern
                 }
 
                 if (isContent)
@@ -105,6 +147,10 @@ namespace DataWizard
                 }
             }
 
+            Lines = lineCounter;
+            EndLine = lineCounter;
+
+            // Besten Separator ermitteln
             char bestSeparator = Separator;
             int highestCount = 0;
             int totalCount = 0;
@@ -128,22 +174,43 @@ namespace DataWizard
             // detect for headerline
             DetectedHeaderLine = IsHeader(firstLine, secondline, Separator);
 
-
-
             // reset stream
             reader.BaseStream.Seek(0, SeekOrigin.Begin);
             reader.DiscardBufferedData();
 
-            while ((line = reader.ReadLine()) != null && Lines < MaxLinesAnalyze)
+            // Zweite Schleife: Field-Count-Analyse und detaillierte Auswertung
+            lineCounter = 0;
+            while ((line = reader.ReadLine()) != null && lineCounter < MaxLinesAnalyze)
             {
-                Console.WriteLine(line);
-                Field[] res = SplitLine(line, Separator);
-                foreach (Field s in res)
+                lineCounter++;
+                
+                if (lineCounter >= StartLine) // Nur ab StartLine analysieren
                 {
-                    Console.WriteLine(s.Quotes.ToString() + " "+ s.Value);
+                    CsvField[] fields = SplitLine(line, Separator);
+                    fieldCountList.Add(fields.Length);
+
+                    // Debug-Ausgabe (optional, kann später entfernt werden)
+                    Console.WriteLine($"Zeile {lineCounter}: {line}");
+                    foreach (CsvField field in fields)
+                    {
+                        Console.WriteLine($"  Quoted: {field.Quotes}, Wert: '{field.Value}'");
+                    }
                 }
+            }
 
+            // Field-Count auswerten
+            if (fieldCountList.Count > 0)
+            {
+                FieldCount = fieldCountList[0]; // Erste Zeile als Referenz
+                IsFieldCountEqual = fieldCountList.All(count => count == FieldCount);
+            }
 
+            // Speichere Header-Feldnamen falls vorhanden
+            if (DetectedHeaderLine && !String.IsNullOrWhiteSpace(firstLine))
+            {
+                headerFieldNames = firstLine.Split(Separator)
+                    .Select(f => f.Trim().Trim('"'))
+                    .ToArray();
             }
         }
 
@@ -152,19 +219,51 @@ namespace DataWizard
             bool isHeader = true;
             try
             {
+                // Wenn eine der Zeilen leer ist, können wir nicht entscheiden
+                if (String.IsNullOrWhiteSpace(firstLine) || String.IsNullOrWhiteSpace(secondLine))
+                {
+                    return false;
+                }
+
                 string[] firstFields = firstLine.Split(separator);
                 string[] secondFields = secondLine.Split(separator);
 
-                for (int i = 0; i < firstFields.Length; i++)
+                // Wenn unterschiedliche Anzahl Felder, unsicher
+                if (firstFields.Length != secondFields.Length)
                 {
-                    //no header, if numbers exists
-                    if (double.TryParse(firstFields[i], out _) && double.TryParse(secondFields[i], out _)) isHeader = false;
+                   // return false;
                 }
 
+                int knownHeaderFieldsCount = 0;
 
+                for (int i = 0; i < firstFields.Length; i++)
+                {
+                    string field1 = firstFields[i].Trim().Trim('"');
+                    string field2 = secondFields[i].Trim().Trim('"');
+
+                    // Prüfe ob Feld 1 einem bekannten Header-Feldnamen entspricht
+                    if (Config != null && Config.IsHeaderFieldName(field1))
+                    {
+                        knownHeaderFieldsCount++;
+                    }
+
+                    // no header, if numbers exists in both first and second line
+                    if (double.TryParse(field1, NumberStyles.Any, CultureInfo.InvariantCulture, out _) && 
+                        double.TryParse(field2, NumberStyles.Any, CultureInfo.InvariantCulture, out _))
+                    {
+                        isHeader = false;
+                    }
+                }
+
+                // Wenn mindestens 50% der Felder bekannte Header-Namen sind, ist es wahrscheinlich ein Header
+                if (knownHeaderFieldsCount > 0)
+                {
+                    isHeader = true;
+                }
             }
             catch (Exception)
             {
+                return false;
             }
             return isHeader;
         }
@@ -181,21 +280,41 @@ namespace DataWizard
             DetectedHeaderLine = false;
         }
 
-        public void WriteXLSX(bool overwrite)
+        public void WriteXLSX(string xlsxPath, bool overwrite)
         {
-            XLS xls = new XLS(this.filePath, overwrite);
-
-            using (StreamReader reader = new StreamReader(this.filePath, DetectedEncoding))
+            using (XLS xls = new XLS(xlsxPath, overwrite))
             {
+                // Übergebe Header-Feldnamen und Config an XLS
+                if (DetectedHeaderLine && headerFieldNames != null)
+                {
+                    xls.SetHeaderFieldNames(headerFieldNames, Config);
+                }
 
+                using (StreamReader reader = new StreamReader(this.filePath, DetectedEncoding))
+                {
+                    string line;
+                    int lineNumber = 0;
+                    int currentRow = 1; // Excel-Zeilen beginnen bei 1
 
-                //string line;
-                //while ((line = reader.ReadLine()) != null)
-                //{
-                //    var col = line.Split(Separator);
-                //    Console.WriteLine(col[0]);
-                //}
-            }
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        lineNumber++;
+
+                        // Überspringe Zeilen vor StartLine
+                        if (lineNumber < StartLine)
+                            continue;
+
+                        CsvField[] fields = SplitLine(line, Separator);
+
+                        // Füge Zeile zum Excel hinzu
+                        xls.AddRow(fields, (uint)currentRow);
+                        currentRow++;
+                    }
+
+                    // Speichere das Excel-Dokument vor dem Dispose
+                    xls.Save();
+                }
+            } // Hier wird automatisch xls.Dispose() aufgerufen
         }
 
         public class UpdateEventArgs : EventArgs
@@ -206,14 +325,11 @@ namespace DataWizard
             {
                 this.Text = text;
             }
-
         }
 
-
-
-        public Field[] SplitLine(string line, char separator)
+        public CsvField[] SplitLine(string line, char separator)
         {
-            List<Field> result = new List<Field>();
+            List<CsvField> result = new List<CsvField>();
             int index = 0;
 
             while (index < line.Length)
@@ -228,7 +344,7 @@ namespace DataWizard
                     }
 
                     if (closingQuote == -1) closingQuote = line.Length; // Kein schließendes Hochkomma gefunden                   
-                    result.Add(new Field { Value = line.Substring(index + 1, closingQuote - index - 1), Quotes = true });
+                    result.Add(new CsvField { Value = line.Substring(index + 1, closingQuote - index - 1), Quotes = true });
                     index = closingQuote + 1;
 
                     // Überspringe das Trennzeichen nach dem geschlossenen Hochkomma
@@ -245,47 +361,29 @@ namespace DataWizard
 
                     // Füge den aktuellen Wert hinzu (auch leere Werte)
                     string value = line.Substring(index, nextSeparator - index);
-                    result.Add(new Field { Value = value, Quotes = false });
+                    result.Add(new CsvField { Value = value, Quotes = false });
                     index = nextSeparator + 1; // Überspringe das Trennzeichen
                 }
             }
 
             // Berücksichtige abschließende leere Felder
-            if (line.EndsWith(separator.ToString()))
+            if (line.Length > 0 && line.EndsWith(separator.ToString()))
             {
-                result.Add(new Field { Value = "", Quotes = true });
+                result.Add(new CsvField { Value = "", Quotes = false });
             }
 
             return result.ToArray();
         }
-
-
-
-
-
-
-
-
-
-
-
     }
 
-    public class Field
+    public class CsvField
     {
         public String Value { get; set; }
         public Boolean Quotes { get; set; }
 
-        public Field()
+        public CsvField()
         {
-            this.Quotes = true;
+            this.Quotes = false;
         }
     }
-
-
 }
-
-
-
-
-

@@ -53,6 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CSV.cs" />
+    <Compile Include="DataWizardConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="XLS.cs" />
   </ItemGroup>
