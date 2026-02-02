@@ -572,7 +572,24 @@ namespace libDataWizard
                         continue; // Leere Zeile überspringen
 
                     // Bestimme die maximale Spaltenanzahl
-                    int maxColumn = GetColumnIndex(cells.Last().CellReference);
+                    // WICHTIG: CellReference kann null sein, also filtern!
+                    int maxColumn = 0;
+
+                    foreach (Cell cell in cells)
+                    {
+                        if (!string.IsNullOrEmpty(cell.CellReference))
+                        {
+                            int colIndex = GetColumnIndex(cell.CellReference);
+                            if (colIndex > maxColumn)
+                                maxColumn = colIndex;
+                        }
+                    }
+
+                    // Fallback: Wenn alle CellReferences null sind, verwende einfach die Anzahl der Zellen
+                    if (maxColumn == 0 && cells.Count > 0)
+                    {
+                        maxColumn = cells.Count - 1;
+                    }
 
                     // Iteriere durch alle Spalten (inklusive leere)
                     for (int colIndex = 0; colIndex <= maxColumn; colIndex++)
@@ -580,7 +597,16 @@ namespace libDataWizard
                         string cellValue = "";
 
                         // Finde Zelle für diese Spalte
-                        Cell cell = cells.FirstOrDefault(c => GetColumnIndex(c.CellReference) == colIndex);
+                        Cell cell = null;
+
+                        // Wenn CellReference vorhanden, verwende es
+                        cell = cells.FirstOrDefault(c => !string.IsNullOrEmpty(c.CellReference) && GetColumnIndex(c.CellReference) == colIndex);
+
+                        // Fallback: Wenn keine CellReference, verwende Index
+                        if (cell == null && colIndex < cells.Count)
+                        {
+                            cell = cells[colIndex];
+                        }
 
                         if (cell != null && cell.CellValue != null)
                         {
@@ -595,6 +621,31 @@ namespace libDataWizard
                     writer.WriteLine(string.Join(separator.ToString(), cellValues));
                 }
             }
+        }
+
+        /// <summary>
+        /// Konvertiert CellReference (z.B. "A1", "B2", "AA1") zu Spalten-Index (0-basiert)
+        /// </summary>
+        private static int GetColumnIndex(string cellReference)
+        {
+            if (string.IsNullOrEmpty(cellReference))
+                return 0;
+
+            // Extrahiere Buchstaben (Spalte) aus CellReference
+            string columnName = new string(cellReference.Where(c => char.IsLetter(c)).ToArray());
+
+            if (string.IsNullOrEmpty(columnName))
+                return 0;
+
+            int columnIndex = 0;
+
+            // Konvertiere Buchstaben zu Zahl (A=1, B=2, ..., Z=26, AA=27, AB=28, ...)
+            for (int i = 0; i < columnName.Length; i++)
+            {
+                columnIndex = columnIndex * 26 + (columnName[i] - 'A' + 1);
+            }
+
+            return columnIndex - 1; // 0-basiert: A=0, B=1, etc.
         }
 
         /// <summary>
@@ -792,30 +843,30 @@ namespace libDataWizard
         /// <summary>
         /// Konvertiert CellReference (z.B. "A1", "B2", "AA1") zu Spalten-Index (0-basiert)
         /// </summary>
-        private static int GetColumnIndex(string cellReference)
-        {
-            if (string.IsNullOrEmpty(cellReference))
-                return 0;
+        //private static int GetColumnIndex(string cellReference)
+        //{
+        //    if (string.IsNullOrEmpty(cellReference))
+        //        return 0;
 
-            // Extrahiere Buchstaben (Spalte) aus CellReference
-            string columnName = new string(cellReference.Where(c => char.IsLetter(c)).ToArray());
+        //    // Extrahiere Buchstaben (Spalte) aus CellReference
+        //    string columnName = new string(cellReference.Where(c => char.IsLetter(c)).ToArray());
 
-            if (string.IsNullOrEmpty(columnName))
-                return 0;
+        //    if (string.IsNullOrEmpty(columnName))
+        //        return 0;
 
-            int columnIndex = 0;
+        //    int columnIndex = 0;
 
-            // Konvertiere Buchstaben zu Zahl (A=1, B=2, ..., Z=26, AA=27, AB=28, ...)
-            for (int i = 0; i < columnName.Length; i++)
-            {
-                columnIndex = columnIndex * 26 + (columnName[i] - 'A' + 1);
-            }
+        //    // Konvertiere Buchstaben zu Zahl (A=1, B=2, ..., Z=26, AA=27, AB=28, ...)
+        //    for (int i = 0; i < columnName.Length; i++)
+        //    {
+        //        columnIndex = columnIndex * 26 + (columnName[i] - 'A' + 1);
+        //    }
 
-            return columnIndex - 1; // 0-basiert: A=0, B=1, etc.
-        }
-        ~XLS()
-        {
-            Dispose(false);
-        }
+        //    return columnIndex - 1; // 0-basiert: A=0, B=1, etc.
+        //}
+        //~XLS()
+        //{
+        //    Dispose(false);
+        //}
     }
 }
