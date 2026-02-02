@@ -29,15 +29,14 @@ namespace DataWizard
         public int Lines;
         public int MaxLinesAnalyze = 100;
         public bool IsFieldCountEqual;
-        public bool DetectedHeaderLine;
+        public int DetectedHeaderLine; // 0 = no header, 1 = header detected, -1 = auto 
         public Encoding DetectedEncoding = Encoding.UTF8;
 
         // Konfiguration für Feldnamen und Datentypen
         public DataWizardConfig Config { get; set; }
         private string[] headerFieldNames; // Erkannte Header-Feldnamen
 
-        private string fieldNames = "no nr article part partno part-no price name id date plz ort street strasse email e-mail";
-
+   
         protected virtual void OnUpdateEvent(UpdateEventArgs e)
         {
             EventHandler newUpdate = Update;
@@ -51,7 +50,7 @@ namespace DataWizard
         {
             Clear();
             _separatorCount = new int[Separators.Length];
-            
+
             // Lade Standard-Konfiguration
             LoadDefaultConfig();
         }
@@ -60,7 +59,7 @@ namespace DataWizard
         {
             Clear();
             _separatorCount = new int[Separators.Length];
-            
+
             // Lade Konfiguration aus Datei
             LoadConfig(configPath);
         }
@@ -89,14 +88,25 @@ namespace DataWizard
             }
         }
 
-        public void Load(String filePath)
+
+        public void Load(String filePath, char separator = '\0', Encoding encoding = null, int isHeader = -1)
         {
             this.filePath = filePath;
 
             // charset detection
-            DetectionResult detectionResult = CharsetDetector.DetectFromFile(this.filePath);
-            DetectedEncoding = detectionResult.Detected.Encoding;
+            if (encoding != null)
+            {
+                DetectedEncoding = encoding;
+            }
+            else
+            {
+                DetectionResult detectionResult = CharsetDetector.DetectFromFile(this.filePath);
+                DetectedEncoding = detectionResult.Detected.Encoding;
+            }
 
+            this.DetectedHeaderLine = isHeader;
+            this.Separator = separator;
+         
             using (StreamReader reader = new StreamReader(this.filePath, DetectedEncoding))
             {
                 Analyze(reader);
@@ -124,7 +134,7 @@ namespace DataWizard
             while ((line = reader.ReadLine()) != null && lineCounter < MaxLinesAnalyze)
             {
                 lineCounter++;
-                
+
                 // Empty lines?
                 if (!isContent && !String.IsNullOrWhiteSpace(line))
                 {
@@ -150,29 +160,34 @@ namespace DataWizard
             Lines = lineCounter;
             EndLine = lineCounter;
 
-            // Besten Separator ermitteln
-            char bestSeparator = Separator;
-            int highestCount = 0;
-            int totalCount = 0;
-
-            foreach (var kvp in separatorCount)
+            // Auto?-Separator-Erkennung
+            if (Separator == '\0')
             {
-                totalCount += kvp.Value;
-                if (kvp.Value > highestCount)
+                // Besten Separator ermitteln
+                char bestSeparator = Separator;
+                int highestCount = 0;
+                int totalCount = 0;
+
+                foreach (var kvp in separatorCount)
                 {
-                    highestCount = kvp.Value;
-                    bestSeparator = kvp.Key;
+                    totalCount += kvp.Value;
+                    if (kvp.Value > highestCount)
+                    {
+                        highestCount = kvp.Value;
+                        bestSeparator = kvp.Key;
+                    }
                 }
+                // calculate probability percent
+                double probability = totalCount > 0 ? (highestCount / (double)totalCount) * 100 : 0;
+
+                Separator = bestSeparator;
+                SeparatorProbability = probability;
             }
 
-            // calculate probability percent
-            double probability = totalCount > 0 ? (highestCount / (double)totalCount) * 100 : 0;
-
-            Separator = bestSeparator;
-            SeparatorProbability = probability;
 
             // detect for headerline
-            DetectedHeaderLine = IsHeader(firstLine, secondline, Separator);
+            if (DetectedHeaderLine == -1)
+                DetectedHeaderLine = IsHeader(firstLine, secondline, Separator) ? 1 : 0;
 
             // reset stream
             reader.BaseStream.Seek(0, SeekOrigin.Begin);
@@ -183,7 +198,7 @@ namespace DataWizard
             while ((line = reader.ReadLine()) != null && lineCounter < MaxLinesAnalyze)
             {
                 lineCounter++;
-                
+
                 if (lineCounter >= StartLine) // Nur ab StartLine analysieren
                 {
                     CsvField[] fields = SplitLine(line, Separator);
@@ -206,7 +221,7 @@ namespace DataWizard
             }
 
             // Speichere Header-Feldnamen falls vorhanden
-            if (DetectedHeaderLine && !String.IsNullOrWhiteSpace(firstLine))
+            if (DetectedHeaderLine == 1 && !String.IsNullOrWhiteSpace(firstLine))
             {
                 headerFieldNames = firstLine.Split(Separator)
                     .Select(f => f.Trim().Trim('"'))
@@ -231,7 +246,7 @@ namespace DataWizard
                 // Wenn unterschiedliche Anzahl Felder, unsicher
                 if (firstFields.Length != secondFields.Length)
                 {
-                   // return false;
+                    // return false;
                 }
 
                 int knownHeaderFieldsCount = 0;
@@ -248,7 +263,7 @@ namespace DataWizard
                     }
 
                     // no header, if numbers exists in both first and second line
-                    if (double.TryParse(field1, NumberStyles.Any, CultureInfo.InvariantCulture, out _) && 
+                    if (double.TryParse(field1, NumberStyles.Any, CultureInfo.InvariantCulture, out _) &&
                         double.TryParse(field2, NumberStyles.Any, CultureInfo.InvariantCulture, out _))
                     {
                         isHeader = false;
@@ -270,14 +285,14 @@ namespace DataWizard
 
         public void Clear()
         {
-            Separator = ';';
+            Separator = '\0';
             SeparatorProbability = 100;
             FieldCount = 0;
             StartLine = 0;
             EndLine = 0;
             Lines = 0;
             IsFieldCountEqual = true;
-            DetectedHeaderLine = false;
+            DetectedHeaderLine = -1;
         }
 
         public void WriteXLSX(string xlsxPath, bool overwrite)
@@ -285,7 +300,7 @@ namespace DataWizard
             using (XLS xls = new XLS(xlsxPath, overwrite))
             {
                 // Übergebe Header-Feldnamen und Config an XLS
-                if (DetectedHeaderLine && headerFieldNames != null)
+                if (DetectedHeaderLine == 1 && headerFieldNames != null)
                 {
                     xls.SetHeaderFieldNames(headerFieldNames, Config);
                 }
