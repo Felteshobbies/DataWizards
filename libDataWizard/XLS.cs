@@ -766,8 +766,31 @@ namespace libDataWizard
             return value;
         }
 
+        ///// <summary>
+        ///// Konvertiert CellReference (z.B. "A1", "B2") zu Spalten-Index (0-basiert)
+        ///// </summary>
+        //private static int GetColumnIndex(string cellReference)
+        //{
+        //    if (string.IsNullOrEmpty(cellReference))
+        //        return 0;
+
+        //    // Extrahiere Buchstaben (Spalte) aus CellReference
+        //    string columnName = new string(cellReference.Where(c => char.IsLetter(c)).ToArray());
+
+        //    int columnIndex = 0;
+        //    int factor = 1;
+
+        //    // Konvertiere Buchstaben zu Zahl (A=0, B=1, ..., Z=25, AA=26, ...)
+        //    for (int i = columnName.Length - 1; i >= 0; i--)
+        //    {
+        //        columnIndex += (columnName[i] - 'A' + 1) * factor;
+        //        factor *= 26;
+        //    }
+
+        //    return columnIndex - 1; // 0-basiert
+        //}
         /// <summary>
-        /// Konvertiert CellReference (z.B. "A1", "B2") zu Spalten-Index (0-basiert)
+        /// Konvertiert CellReference (z.B. "A1", "B2", "AA1") zu Spalten-Index (0-basiert)
         /// </summary>
         private static int GetColumnIndex(string cellReference)
         {
@@ -777,19 +800,19 @@ namespace libDataWizard
             // Extrahiere Buchstaben (Spalte) aus CellReference
             string columnName = new string(cellReference.Where(c => char.IsLetter(c)).ToArray());
 
-            int columnIndex = 0;
-            int factor = 1;
+            if (string.IsNullOrEmpty(columnName))
+                return 0;
 
-            // Konvertiere Buchstaben zu Zahl (A=0, B=1, ..., Z=25, AA=26, ...)
-            for (int i = columnName.Length - 1; i >= 0; i--)
+            int columnIndex = 0;
+
+            // Konvertiere Buchstaben zu Zahl (A=1, B=2, ..., Z=26, AA=27, AB=28, ...)
+            for (int i = 0; i < columnName.Length; i++)
             {
-                columnIndex += (columnName[i] - 'A' + 1) * factor;
-                factor *= 26;
+                columnIndex = columnIndex * 26 + (columnName[i] - 'A' + 1);
             }
 
-            return columnIndex - 1; // 0-basiert
+            return columnIndex - 1; // 0-basiert: A=0, B=1, etc.
         }
-
         ~XLS()
         {
             Dispose(false);
