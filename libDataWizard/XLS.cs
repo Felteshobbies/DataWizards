@@ -592,21 +592,38 @@ namespace libDataWizard
                     }
 
                     // Iteriere durch alle Spalten (inklusive leere)
+                    //for (int colIndex = 0; colIndex <= maxColumn; colIndex++)
+                    //{
+                    //    string cellValue = "";
+
+                    //    // Finde Zelle für diese Spalte
+                    //    Cell cell = null;
+
+                    //    // Wenn CellReference vorhanden, verwende es
+                    //    cell = cells.FirstOrDefault(c => !string.IsNullOrEmpty(c.CellReference) && GetColumnIndex(c.CellReference) == colIndex);
+
+                    //    // Fallback: Wenn keine CellReference, verwende Index
+                    //    if (cell == null && colIndex < cells.Count)
+                    //    {
+                    //        cell = cells[colIndex];
+                    //    }
+
+                    //    if (cell != null && cell.CellValue != null)
+                    //    {
+                    //        cellValue = GetCellValue(cell, stringTablePart, workbookPart);
+                    //    }
+
+                    //    // Formatiere Zellwert für CSV
+                    //    cellValues.Add(FormatCsvField(cellValue, separator, quoteAllText, cell));
+                    //}
+
                     for (int colIndex = 0; colIndex <= maxColumn; colIndex++)
                     {
                         string cellValue = "";
 
-                        // Finde Zelle für diese Spalte
-                        Cell cell = null;
-
-                        // Wenn CellReference vorhanden, verwende es
-                        cell = cells.FirstOrDefault(c => !string.IsNullOrEmpty(c.CellReference) && GetColumnIndex(c.CellReference) == colIndex);
-
-                        // Fallback: Wenn keine CellReference, verwende Index
-                        if (cell == null && colIndex < cells.Count)
-                        {
-                            cell = cells[colIndex];
-                        }
+                        // Finde Zelle für diese Spalte anhand der CellReference
+                        Cell cell = cells.FirstOrDefault(c => !string.IsNullOrEmpty(c.CellReference)
+                                                           && GetColumnIndex(c.CellReference) == colIndex);
 
                         if (cell != null && cell.CellValue != null)
                         {
