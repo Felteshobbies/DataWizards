@@ -12,6 +12,18 @@ using System.Globalization;
 
 namespace libDataWizard
 {
+    /// <summary>
+    /// Datentyp einer Excel-Zelle für CSV-Export
+    /// </summary>
+    internal enum CellType
+    {
+        Empty,      // Leere Zelle
+        Text,       // Text/String
+        Number,     // Zahl (Integer oder Decimal)
+        Date,       // Datum
+        Boolean     // Boolean
+    }
+
     public class XLS : IDisposable
     {
         public Boolean overwrite { get; set; }
@@ -592,46 +604,21 @@ namespace libDataWizard
                     }
 
                     // Iteriere durch alle Spalten (inklusive leere)
-                    //for (int colIndex = 0; colIndex <= maxColumn; colIndex++)
-                    //{
-                    //    string cellValue = "";
-
-                    //    // Finde Zelle für diese Spalte
-                    //    Cell cell = null;
-
-                    //    // Wenn CellReference vorhanden, verwende es
-                    //    cell = cells.FirstOrDefault(c => !string.IsNullOrEmpty(c.CellReference) && GetColumnIndex(c.CellReference) == colIndex);
-
-                    //    // Fallback: Wenn keine CellReference, verwende Index
-                    //    if (cell == null && colIndex < cells.Count)
-                    //    {
-                    //        cell = cells[colIndex];
-                    //    }
-
-                    //    if (cell != null && cell.CellValue != null)
-                    //    {
-                    //        cellValue = GetCellValue(cell, stringTablePart, workbookPart);
-                    //    }
-
-                    //    // Formatiere Zellwert für CSV
-                    //    cellValues.Add(FormatCsvField(cellValue, separator, quoteAllText, cell));
-                    //}
-
                     for (int colIndex = 0; colIndex <= maxColumn; colIndex++)
                     {
                         string cellValue = "";
+                        CellType cellType = CellType.Empty;
 
                         // Finde Zelle für diese Spalte anhand der CellReference
-                        Cell cell = cells.FirstOrDefault(c => !string.IsNullOrEmpty(c.CellReference)
-                                                           && GetColumnIndex(c.CellReference) == colIndex);
+                        Cell cell = cells.FirstOrDefault(c => !string.IsNullOrEmpty(c.CellReference) && GetColumnIndex(c.CellReference) == colIndex);
 
                         if (cell != null && cell.CellValue != null)
                         {
-                            cellValue = GetCellValue(cell, stringTablePart, workbookPart);
+                            cellValue = GetCellValueWithType(cell, stringTablePart, workbookPart, out cellType);
                         }
 
                         // Formatiere Zellwert für CSV
-                        cellValues.Add(FormatCsvField(cellValue, separator, quoteAllText, cell));
+                        cellValues.Add(FormatCsvField(cellValue, separator, quoteAllText, cellType));
                     }
 
                     // Schreibe Zeile
@@ -666,36 +653,44 @@ namespace libDataWizard
         }
 
         /// <summary>
-        /// Extrahiert den Zellwert aus einer Excel-Zelle
+        /// Extrahiert den Zellwert UND den Datentyp aus einer Excel-Zelle
         /// </summary>
-        private static string GetCellValue(Cell cell, SharedStringTablePart stringTablePart, WorkbookPart workbookPart)
+        private static string GetCellValueWithType(Cell cell, SharedStringTablePart stringTablePart, WorkbookPart workbookPart, out CellType cellType)
         {
+            cellType = CellType.Text; // Default
             string value = cell.CellValue.InnerText;
 
+            // SharedString = Text
             if (cell.DataType != null && cell.DataType.Value == CellValues.SharedString)
             {
-                // Text aus SharedStringTable
+                cellType = CellType.Text;
                 if (stringTablePart != null)
                 {
                     return stringTablePart.SharedStringTable.Elements<SharedStringItem>().ElementAt(int.Parse(value)).InnerText;
                 }
-            }
-            else if (cell.DataType != null && cell.DataType.Value == CellValues.Boolean)
-            {
-                // Boolean
-                return value == "1" ? "TRUE" : "FALSE";
-            }
-            else if (cell.DataType != null && cell.DataType.Value == CellValues.String)
-            {
-                // Inline String
                 return value;
             }
 
-            // Prüfe ob die Zelle ein Datum-Format hat (durch Stylesheet)
+            // Boolean
+            if (cell.DataType != null && cell.DataType.Value == CellValues.Boolean)
+            {
+                cellType = CellType.Boolean;
+                return value == "1" ? "TRUE" : "FALSE";
+            }
+
+            // Inline String
+            if (cell.DataType != null && cell.DataType.Value == CellValues.String)
+            {
+                cellType = CellType.Text;
+                return value;
+            }
+
+            // Prüfe ob die Zelle ein Datum-Format hat
             bool isDateFormat = IsDateFormatted(cell, workbookPart);
 
             if (isDateFormat)
             {
+                cellType = CellType.Date;
                 // Behandle als Datum
                 if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double oaDate))
                 {
@@ -706,19 +701,22 @@ namespace libDataWizard
                     }
                     catch
                     {
-                        // Ungültige OADate - gib Zahl zurück
+                        // Ungültige OADate - falle zurück auf Zahl
+                        cellType = CellType.Number;
                         return FormatNumber(value);
                     }
                 }
             }
 
-            // Nicht als Datum formatiert - behandle als Zahl
+            // Nummer (nicht als Datum formatiert)
             if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double numericValue))
             {
+                cellType = CellType.Number;
                 return FormatNumber(value);
             }
 
-            // Fallback: Rohwert
+            // Fallback: Text
+            cellType = CellType.Text;
             return value;
         }
 
@@ -802,26 +800,25 @@ namespace libDataWizard
         /// <summary>
         /// Formatiert ein Feld für CSV (mit Quotes wenn nötig)
         /// </summary>
-        private static string FormatCsvField(string value, char separator, bool quoteAllText, Cell cell)
+        private static string FormatCsvField(string value, char separator, bool quoteAllText, CellType cellType)
         {
+            // Leere Werte: Quote nur wenn quoteAllText=true
+            if (string.IsNullOrEmpty(value))
+            {
+                return quoteAllText ? "\"\"" : "";
+            }
+
             bool needsQuotes = false;
 
-            // Prüfe ob Quotes nötig sind
+            // IMMER Quotes wenn Sonderzeichen enthalten sind
             if (value.Contains(separator) || value.Contains('"') || value.Contains('\n') || value.Contains('\r'))
             {
                 needsQuotes = true;
             }
-
-            // Wenn quoteAllText und es ist ein Text-Feld
-            if (quoteAllText && cell != null)
+            // Wenn quoteAllText aktiviert: Text-Felder und leere Felder quoten
+            else if (quoteAllText && (cellType == CellType.Text || cellType == CellType.Empty))
             {
-                // Text-Felder (DataType String oder StyleIndex 0)
-                if ((cell.DataType != null && cell.DataType.Value == CellValues.String) ||
-                    (cell.DataType != null && cell.DataType.Value == CellValues.SharedString) ||
-                    (cell.StyleIndex != null && cell.StyleIndex.Value == 0))
-                {
-                    needsQuotes = true;
-                }
+                needsQuotes = true;
             }
 
             if (needsQuotes)
@@ -833,57 +830,5 @@ namespace libDataWizard
 
             return value;
         }
-
-        ///// <summary>
-        ///// Konvertiert CellReference (z.B. "A1", "B2") zu Spalten-Index (0-basiert)
-        ///// </summary>
-        //private static int GetColumnIndex(string cellReference)
-        //{
-        //    if (string.IsNullOrEmpty(cellReference))
-        //        return 0;
-
-        //    // Extrahiere Buchstaben (Spalte) aus CellReference
-        //    string columnName = new string(cellReference.Where(c => char.IsLetter(c)).ToArray());
-
-        //    int columnIndex = 0;
-        //    int factor = 1;
-
-        //    // Konvertiere Buchstaben zu Zahl (A=0, B=1, ..., Z=25, AA=26, ...)
-        //    for (int i = columnName.Length - 1; i >= 0; i--)
-        //    {
-        //        columnIndex += (columnName[i] - 'A' + 1) * factor;
-        //        factor *= 26;
-        //    }
-
-        //    return columnIndex - 1; // 0-basiert
-        //}
-        /// <summary>
-        /// Konvertiert CellReference (z.B. "A1", "B2", "AA1") zu Spalten-Index (0-basiert)
-        /// </summary>
-        //private static int GetColumnIndex(string cellReference)
-        //{
-        //    if (string.IsNullOrEmpty(cellReference))
-        //        return 0;
-
-        //    // Extrahiere Buchstaben (Spalte) aus CellReference
-        //    string columnName = new string(cellReference.Where(c => char.IsLetter(c)).ToArray());
-
-        //    if (string.IsNullOrEmpty(columnName))
-        //        return 0;
-
-        //    int columnIndex = 0;
-
-        //    // Konvertiere Buchstaben zu Zahl (A=1, B=2, ..., Z=26, AA=27, AB=28, ...)
-        //    for (int i = 0; i < columnName.Length; i++)
-        //    {
-        //        columnIndex = columnIndex * 26 + (columnName[i] - 'A' + 1);
-        //    }
-
-        //    return columnIndex - 1; // 0-basiert: A=0, B=1, etc.
-        //}
-        //~XLS()
-        //{
-        //    Dispose(false);
-        //}
     }
 }
