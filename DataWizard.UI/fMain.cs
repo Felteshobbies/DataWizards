@@ -306,7 +306,7 @@ namespace DataWizard.UI
                     string extension = Path.GetExtension(file).ToLower();
                     string outputFile = GetOutputFileName(file, extension == ".xlsx" ? ".csv" : ".xlsx");
 
-                    if (extension == ".csv" || extension == ".txt")
+                    if (extension == ".csv" || extension == ".txt" || extension == ".log")
                     {
                         ConvertCsvToXlsx(file, outputFile);
                     }
@@ -373,7 +373,7 @@ namespace DataWizard.UI
             AddLog($"Konvertiere XLSX → CSV: {xlsxFile} → {csvFile}");
             XLS.ToCsv(xlsxFile, csvFile, optionXlsSeparator,
                  optionXlsEncoding,
-                 optionXlsQuoteAllText,
+                 optionXlsQuoteAllText,               
                  0,
                  optionXlsAllSheets);
 
