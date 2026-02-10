@@ -48,20 +48,16 @@ namespace libDataWizard
                 throw new Exception("File exists.");
             }
 
-            // Wenn Datei existiert und overwrite=true, lösche sie
             if (File.Exists(filePath) && overwrite)
             {
                 File.Delete(filePath);
             }
 
-            // Erstelle neues Dokument
             document = SpreadsheetDocument.Create(filePath, DocumentFormat.OpenXml.SpreadsheetDocumentType.Workbook);
 
-            // Workbook und Worksheet erstellen
             workbookPart = document.AddWorkbookPart();
             workbookPart.Workbook = new Workbook();
 
-            // Stylesheet für Formatierungen erstellen
             CreateStylesheet();
 
             worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
@@ -76,53 +72,40 @@ namespace libDataWizard
             };
             sheets.Append(sheet);
 
-            // SheetData-Referenz speichern für spätere Verwendung
             sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>();
         }
 
-        /// <summary>
-        /// Erstellt ein Stylesheet mit Formaten für verschiedene Datentypen
-        /// </summary>
         private void CreateStylesheet()
         {
             WorkbookStylesPart stylesPart = workbookPart.AddNewPart<WorkbookStylesPart>();
             stylesPart.Stylesheet = new Stylesheet();
 
-            // Fonts
             stylesPart.Stylesheet.Fonts = new Fonts();
             stylesPart.Stylesheet.Fonts.Count = 1;
             stylesPart.Stylesheet.Fonts.AppendChild(new DocumentFormat.OpenXml.Spreadsheet.Font());
 
-            // Fills
             stylesPart.Stylesheet.Fills = new Fills();
             stylesPart.Stylesheet.Fills.Count = 2;
             stylesPart.Stylesheet.Fills.AppendChild(new Fill { PatternFill = new PatternFill { PatternType = PatternValues.None } });
             stylesPart.Stylesheet.Fills.AppendChild(new Fill { PatternFill = new PatternFill { PatternType = PatternValues.Gray125 } });
 
-            // Borders
             stylesPart.Stylesheet.Borders = new Borders();
             stylesPart.Stylesheet.Borders.Count = 1;
             stylesPart.Stylesheet.Borders.AppendChild(new Border());
 
-            // NumberingFormats
             stylesPart.Stylesheet.NumberingFormats = new NumberingFormats();
             stylesPart.Stylesheet.NumberingFormats.Count = 2;
-
-            // Custom format für Datum: dd.MM.yyyy (Format-ID 164+)
             stylesPart.Stylesheet.NumberingFormats.AppendChild(new NumberingFormat
             {
                 NumberFormatId = 164,
                 FormatCode = "dd.mm.yyyy"
             });
-
-            // Custom format für Dezimalzahlen: #,##0.00
             stylesPart.Stylesheet.NumberingFormats.AppendChild(new NumberingFormat
             {
                 NumberFormatId = 165,
                 FormatCode = "#,##0.00"
             });
 
-            // CellFormats
             stylesPart.Stylesheet.CellFormats = new CellFormats();
             stylesPart.Stylesheet.CellFormats.Count = 4;
 
@@ -134,7 +117,6 @@ namespace libDataWizard
                 FillId = 0,
                 BorderId = 0
             });
-
             // Index 1: Datum (dd.MM.yyyy)
             stylesPart.Stylesheet.CellFormats.AppendChild(new CellFormat
             {
@@ -144,7 +126,6 @@ namespace libDataWizard
                 BorderId = 0,
                 ApplyNumberFormat = true
             });
-
             // Index 2: Dezimal (#,##0.00)
             stylesPart.Stylesheet.CellFormats.AppendChild(new CellFormat
             {
@@ -154,11 +135,10 @@ namespace libDataWizard
                 BorderId = 0,
                 ApplyNumberFormat = true
             });
-
-            // Index 3: Integer (0 - keine Dezimalstellen)
+            // Index 3: Integer
             stylesPart.Stylesheet.CellFormats.AppendChild(new CellFormat
             {
-                NumberFormatId = 1, // Built-in: 0
+                NumberFormatId = 1,
                 FontId = 0,
                 FillId = 0,
                 BorderId = 0,
@@ -168,13 +148,27 @@ namespace libDataWizard
             stylesPart.Stylesheet.Save();
         }
 
-        /// <summary>
-        /// Setzt die Header-Feldnamen für Datentyp-Überschreibungen
-        /// </summary>
         public void SetHeaderFieldNames(string[] fieldNames, DataWizardConfig configuration)
         {
             this.headerFieldNames = fieldNames;
             this.config = configuration;
+        }
+
+        /// <summary>
+        /// Konvertiert 0-basierten Spalten-Index zu Excel-Spaltenname (A, B, ..., Z, AA, AB, ...)
+        /// </summary>
+        private static string GetColumnName(int columnIndex)
+        {
+            string columnName = "";
+            int index = columnIndex;
+
+            while (index >= 0)
+            {
+                columnName = (char)('A' + index % 26) + columnName;
+                index = index / 26 - 1;
+            }
+
+            return columnName;
         }
 
         /// <summary>
@@ -186,7 +180,9 @@ namespace libDataWizard
 
             for (int i = 0; i < fields.Length; i++)
             {
-                Cell cell = CreateCell(fields[i], i);
+                // ✅ CellReference korrekt setzen: "A1", "B1", "C2" etc.
+                string cellReference = GetColumnName(i) + rowIndex.ToString();
+                Cell cell = CreateCell(fields[i], i, cellReference);
                 row.Append(cell);
             }
 
@@ -194,18 +190,19 @@ namespace libDataWizard
         }
 
         /// <summary>
-        /// Erstellt eine Zelle basierend auf dem CsvField-Objekt und Spalten-Index
+        /// Erstellt eine Zelle mit CellReference
         /// </summary>
-        private Cell CreateCell(CsvField field, int columnIndex)
+        private Cell CreateCell(CsvField field, int columnIndex, string cellReference)
         {
             Cell cell = new Cell();
+            cell.CellReference = cellReference; // ✅ Immer setzen!
 
             // Wenn Feld in Anführungszeichen war -> immer als Text behandeln
             if (field.Quotes)
             {
                 cell.DataType = CellValues.String;
                 cell.CellValue = new CellValue(field.Value);
-                cell.StyleIndex = 0; // Standard/Text
+                cell.StyleIndex = 0;
                 return cell;
             }
 
@@ -217,113 +214,80 @@ namespace libDataWizard
                 overrideType = config.GetDataTypeOverride(fieldName);
             }
 
-            // Verwende Override-Typ falls vorhanden, sonst automatische Erkennung
             if (overrideType.HasValue && overrideType.Value != FieldDataType.Auto)
             {
-                return CreateCellWithDataType(field, overrideType.Value);
+                return CreateCellWithDataType(field, overrideType.Value, cellReference);
             }
             else
             {
-                return CreateCellAutoDetect(field);
+                return CreateCellAutoDetect(field, cellReference);
             }
         }
 
         /// <summary>
         /// Erstellt eine Zelle mit automatischer Datentyp-Erkennung
         /// </summary>
-        private Cell CreateCellAutoDetect(CsvField field)
+        private Cell CreateCellAutoDetect(CsvField field, string cellReference)
         {
             Cell cell = new Cell();
+            cell.CellReference = cellReference; // ✅ Immer setzen!
 
-            // WICHTIG: ERST Zahl prüfen, DANN Datum!
-            // Grund: DateTime.TryParse ist zu aggressiv und erkennt "6" als Datum
-
-            // NumberStyles ohne AllowThousands - sonst wird Komma als Tausendertrennzeichen interpretiert
             NumberStyles numberStyle = NumberStyles.Float | NumberStyles.AllowLeadingSign;
 
-            // Versuche, den Wert als Zahl zu parsen (InvariantCulture = Punkt als Dezimaltrennzeichen)
-            bool isInvariantNumber = double.TryParse(field.Value, numberStyle, CultureInfo.InvariantCulture, out double numericValue);
+            bool isNumber = double.TryParse(field.Value, numberStyle, CultureInfo.InvariantCulture, out double numericValue);
 
-            // Fallback: Versuche deutsches Format (Komma als Dezimaltrennzeichen)
-            if (!isInvariantNumber)
-            {
-                isInvariantNumber = double.TryParse(field.Value, numberStyle, CultureInfo.GetCultureInfo("de-DE"), out numericValue);
-            }
+            if (!isNumber)
+                isNumber = double.TryParse(field.Value, numberStyle, CultureInfo.GetCultureInfo("de-DE"), out numericValue);
 
-            if (isInvariantNumber)
+            if (isNumber)
             {
-                // Prüfe ob es eine Ganzzahl ist
                 if (numericValue == Math.Floor(numericValue) && Math.Abs(numericValue) < int.MaxValue)
                 {
-                    // Integer
                     cell.DataType = CellValues.Number;
                     cell.CellValue = new CellValue(numericValue.ToString(CultureInfo.InvariantCulture));
-                    cell.StyleIndex = 3; // Integer-Format
+                    cell.StyleIndex = 3; // Integer
                 }
                 else
                 {
-                    // Decimal
                     cell.DataType = CellValues.Number;
                     cell.CellValue = new CellValue(numericValue.ToString(CultureInfo.InvariantCulture));
-                    cell.StyleIndex = 2; // Decimal-Format
+                    cell.StyleIndex = 2; // Decimal
                 }
             }
             else if (IsValidDate(field.Value, out DateTime dateValue))
             {
-                // Datumswert - nur wenn es ein ECHTES Datum ist (nicht nur eine Zahl)
-                double oaDate = dateValue.ToOADate();
                 cell.DataType = CellValues.Number;
-                cell.CellValue = new CellValue(oaDate);
-                cell.StyleIndex = 1; // Datum-Format (dd.MM.yyyy)
+                cell.CellValue = new CellValue(dateValue.ToOADate());
+                cell.StyleIndex = 1; // Datum
             }
             else
             {
-                // Textwert
                 cell.DataType = CellValues.String;
                 cell.CellValue = new CellValue(field.Value);
-                cell.StyleIndex = 0; // Standard/Text
+                cell.StyleIndex = 0; // Text
             }
 
             return cell;
         }
 
-        /// <summary>
-        /// Prüft ob ein String ein ECHTES Datum ist (nicht nur eine Zahl die zufällig als Datum geparst werden kann)
-        /// </summary>
         private static bool IsValidDate(string value, out DateTime dateValue)
         {
             dateValue = DateTime.MinValue;
 
-            if (string.IsNullOrWhiteSpace(value))
-                return false;
-
-            // Wenn es nur Ziffern sind (z.B. "6", "123"), ist es KEIN Datum
-            if (value.All(c => char.IsDigit(c)))
-                return false;
-
-            // Versuche Datum zu parsen
-            if (!DateTime.TryParse(value, out dateValue))
-                return false;
-
-            // Zusätzliche Validierung: Muss Trennzeichen enthalten (-, /, .)
-            if (!value.Contains('-') && !value.Contains('/') && !value.Contains('.'))
-                return false;
-
-            // Datum muss in vernünftigem Bereich sein
-            if (dateValue.Year < 1900 || dateValue.Year > 2100)
-                return false;
+            if (string.IsNullOrWhiteSpace(value)) return false;
+            if (value.All(c => char.IsDigit(c))) return false;
+            if (!DateTime.TryParse(value, out dateValue)) return false;
+            if (!value.Contains('-') && !value.Contains('/') && !value.Contains('.')) return false;
+            if (dateValue.Year < 1900 || dateValue.Year > 2100) return false;
 
             return true;
         }
 
-        /// <summary>
-        /// Erstellt eine Zelle mit festgelegtem Datentyp
-        /// </summary>
-        private Cell CreateCellWithDataType(CsvField field, FieldDataType dataType)
+        private Cell CreateCellWithDataType(CsvField field, FieldDataType dataType, string cellReference)
         {
             Cell cell = new Cell();
+            cell.CellReference = cellReference; // ✅ Immer setzen!
 
-            // NumberStyles ohne AllowThousands - wichtig für deutsches Format!
             NumberStyles numberStyle = NumberStyles.Float | NumberStyles.AllowLeadingSign;
 
             switch (dataType)
@@ -331,70 +295,38 @@ namespace libDataWizard
                 case FieldDataType.Text:
                     cell.DataType = CellValues.String;
                     cell.CellValue = new CellValue(field.Value);
-                    cell.StyleIndex = 0; // Standard/Text
+                    cell.StyleIndex = 0;
                     break;
 
                 case FieldDataType.Integer:
-                    // Versuche englisches Format
                     bool isIntParsed = int.TryParse(field.Value, numberStyle, CultureInfo.InvariantCulture, out int intValue);
-
-                    // Fallback: deutsches Format
                     if (!isIntParsed)
-                    {
                         isIntParsed = int.TryParse(field.Value, numberStyle, CultureInfo.GetCultureInfo("de-DE"), out intValue);
-                    }
 
-                    if (isIntParsed)
-                    {
-                        cell.DataType = CellValues.Number;
-                        cell.CellValue = new CellValue(intValue);
-                        cell.StyleIndex = 3; // Integer-Format (0)
-                    }
-                    else
-                    {
-                        // Fallback zu Text wenn Parsing fehlschlägt
-                        cell.DataType = CellValues.String;
-                        cell.CellValue = new CellValue(field.Value);
-                        cell.StyleIndex = 0;
-                    }
+                    cell.DataType = isIntParsed ? CellValues.Number : CellValues.String;
+                    cell.CellValue = isIntParsed ? new CellValue(intValue) : new CellValue(field.Value);
+                    cell.StyleIndex = isIntParsed ? 3u : 0u;
                     break;
 
                 case FieldDataType.Decimal:
-                    // Versuche englisches Format
-                    bool isDecimalParsed = double.TryParse(field.Value, numberStyle, CultureInfo.InvariantCulture, out double decimalValue);
+                    bool isDecParsed = double.TryParse(field.Value, numberStyle, CultureInfo.InvariantCulture, out double decValue);
+                    if (!isDecParsed)
+                        isDecParsed = double.TryParse(field.Value, numberStyle, CultureInfo.GetCultureInfo("de-DE"), out decValue);
 
-                    // Fallback: deutsches Format
-                    if (!isDecimalParsed)
-                    {
-                        isDecimalParsed = double.TryParse(field.Value, numberStyle, CultureInfo.GetCultureInfo("de-DE"), out decimalValue);
-                    }
-
-                    if (isDecimalParsed)
-                    {
-                        cell.DataType = CellValues.Number;
-                        cell.CellValue = new CellValue(decimalValue.ToString(CultureInfo.InvariantCulture));
-                        cell.StyleIndex = 2; // Decimal-Format (#,##0.00)
-                    }
-                    else
-                    {
-                        // Fallback zu Text wenn Parsing fehlschlägt
-                        cell.DataType = CellValues.String;
-                        cell.CellValue = new CellValue(field.Value);
-                        cell.StyleIndex = 0;
-                    }
+                    cell.DataType = isDecParsed ? CellValues.Number : CellValues.String;
+                    cell.CellValue = isDecParsed ? new CellValue(decValue.ToString(CultureInfo.InvariantCulture)) : new CellValue(field.Value);
+                    cell.StyleIndex = isDecParsed ? 2u : 0u;
                     break;
 
                 case FieldDataType.Date:
                     if (DateTime.TryParse(field.Value, out DateTime dateValue))
                     {
-                        double oaDate = dateValue.ToOADate();
                         cell.DataType = CellValues.Number;
-                        cell.CellValue = new CellValue(oaDate);
-                        cell.StyleIndex = 1; // Datum-Format (dd.MM.yyyy)
+                        cell.CellValue = new CellValue(dateValue.ToOADate());
+                        cell.StyleIndex = 1;
                     }
                     else
                     {
-                        // Fallback zu Text wenn Parsing fehlschlägt
                         cell.DataType = CellValues.String;
                         cell.CellValue = new CellValue(field.Value);
                         cell.StyleIndex = 0;
@@ -402,28 +334,12 @@ namespace libDataWizard
                     break;
 
                 default:
-                    // Auto oder unbekannt - verwende Auto-Detection
-                    return CreateCellAutoDetect(field);
+                    return CreateCellAutoDetect(field, cellReference);
             }
 
             return cell;
         }
 
-        /// <summary>
-        /// Alternative Methode zum Erstellen einer Text-Zelle
-        /// </summary>
-        private Cell CreateTextCell(string cellValue)
-        {
-            return new Cell()
-            {
-                DataType = CellValues.String,
-                CellValue = new CellValue(cellValue)
-            };
-        }
-
-        /// <summary>
-        /// Speichert das Excel-Dokument (sollte vor Dispose aufgerufen werden)
-        /// </summary>
         public void Save()
         {
             if (workbookPart != null && workbookPart.Workbook != null)
@@ -432,9 +348,6 @@ namespace libDataWizard
             }
         }
 
-        /// <summary>
-        /// Dispose-Pattern Implementation
-        /// </summary>
         public void Dispose()
         {
             Dispose(true);
@@ -447,7 +360,6 @@ namespace libDataWizard
             {
                 if (disposing)
                 {
-                    // Managed resources freigeben
                     if (document != null)
                     {
                         document.Dispose();
@@ -458,17 +370,10 @@ namespace libDataWizard
             }
         }
 
-        /// <summary>
-        /// Konvertiert die Excel-Datei zu CSV
-        /// </summary>
-        /// <param name="xlsxPath">Pfad zur XLSX-Datei</param>
-        /// <param name="csvPath">Pfad zur CSV-Ausgabedatei (bei exportAllSheets wird Sheetname eingefügt)</param>
-        /// <param name="separator">Trennzeichen (Standard: ;)</param>
-        /// <param name="encoding">Encoding (Standard: UTF-8)</param>
-        /// <param name="quoteAllText">Alle Text-Felder in Anführungszeichen setzen</param>
-        /// <param name="worksheetIndex">Index des Worksheets (0-basiert, Standard: 0, ignoriert wenn exportAllSheets=true)</param>
-        /// <param name="exportAllSheets">Alle Worksheets exportieren (Standard: false)</param>
-        /// <returns>Liste der erstellten CSV-Dateien</returns>
+        // ═══════════════════════════════════════════════════════════
+        // XLSX → CSV
+        // ═══════════════════════════════════════════════════════════
+
         public static List<string> ToCsv(string xlsxPath, string csvPath, char separator = ';', Encoding encoding = null, bool quoteAllText = true, int worksheetIndex = 0, bool exportAllSheets = false)
         {
             if (encoding == null)
@@ -489,23 +394,16 @@ namespace libDataWizard
 
                 if (exportAllSheets)
                 {
-                    // Exportiere alle Worksheets
                     for (int i = 0; i < sheets.Count; i++)
                     {
-                        Sheet sheet = sheets[i];
-                        string sheetName = SanitizeFileName(sheet.Name);
-
-                        // Erstelle Dateinamen mit Sheetnamen
+                        string sheetName = SanitizeFileName(sheets[i].Name);
                         string outputPath = InsertSheetNameIntoPath(csvPath, sheetName);
-
-                        // Exportiere Sheet
-                        ExportSheetToCsv(sheet, workbookPart, outputPath, separator, encoding, quoteAllText);
+                        ExportSheetToCsv(sheets[i], workbookPart, outputPath, separator, encoding, quoteAllText);
                         createdFiles.Add(outputPath);
                     }
                 }
                 else
                 {
-                    // Exportiere nur ein Worksheet
                     Sheet sheet = sheets.ElementAtOrDefault(worksheetIndex);
                     if (sheet == null)
                         throw new ArgumentException($"Worksheet mit Index {worksheetIndex} nicht gefunden.");
@@ -518,312 +416,181 @@ namespace libDataWizard
             return createdFiles;
         }
 
-        /// <summary>
-        /// Fügt den Sheetnamen in den Dateipfad ein
-        /// </summary>
         private static string InsertSheetNameIntoPath(string csvPath, string sheetName)
         {
             string directory = Path.GetDirectoryName(csvPath);
             string fileNameWithoutExt = Path.GetFileNameWithoutExtension(csvPath);
             string extension = Path.GetExtension(csvPath);
-
-            // Dateiname_Sheetname.csv
             string newFileName = $"{fileNameWithoutExt}_{sheetName}{extension}";
-
-            if (string.IsNullOrEmpty(directory))
-                return newFileName;
-
-            return Path.Combine(directory, newFileName);
+            return string.IsNullOrEmpty(directory) ? newFileName : Path.Combine(directory, newFileName);
         }
 
-        /// <summary>
-        /// Bereinigt Sheetnamen für Dateinamen (entfernt ungültige Zeichen)
-        /// </summary>
         private static string SanitizeFileName(string name)
         {
-            if (string.IsNullOrEmpty(name))
-                return "Sheet";
-
-            // Entferne ungültige Zeichen für Dateinamen
-            char[] invalidChars = Path.GetInvalidFileNameChars();
-            foreach (char c in invalidChars)
-            {
+            if (string.IsNullOrEmpty(name)) return "Sheet";
+            foreach (char c in Path.GetInvalidFileNameChars())
                 name = name.Replace(c, '_');
-            }
-
-            // Entferne auch weitere problematische Zeichen
-            name = name.Replace(" ", "_");  // Leerzeichen zu Unterstrich
-            name = name.Replace(":", "_");
-            name = name.Replace("/", "_");
-            name = name.Replace("\\", "_");
-
+            name = name.Replace(" ", "_").Replace(":", "_").Replace("/", "_").Replace("\\", "_");
             return name;
         }
 
-        /// <summary>
-        /// Exportiert ein einzelnes Sheet zu CSV
-        /// </summary>
         private static void ExportSheetToCsv(Sheet sheet, WorkbookPart workbookPart, string csvPath, char separator, Encoding encoding, bool quoteAllText)
         {
             WorksheetPart worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id);
             SheetData sheetData = worksheetPart.Worksheet.Elements<SheetData>().First();
-
-            // SharedStringTable für Text-Werte
             SharedStringTablePart stringTablePart = workbookPart.SharedStringTablePart;
 
             using (StreamWriter writer = new StreamWriter(csvPath, false, encoding))
             {
                 foreach (Row row in sheetData.Elements<Row>())
                 {
-                    List<string> cellValues = new List<string>();
-
-                    // Hole alle Zellen der Zeile
                     var cells = row.Elements<Cell>().ToList();
+                    if (cells.Count == 0) continue;
 
-                    if (cells.Count == 0)
-                        continue; // Leere Zeile überspringen
-
-                    // Bestimme die maximale Spaltenanzahl
-                    // WICHTIG: CellReference kann null sein, also filtern!
+                    // Maximale Spalte anhand CellReference bestimmen
                     int maxColumn = 0;
-
                     foreach (Cell cell in cells)
                     {
                         if (!string.IsNullOrEmpty(cell.CellReference))
                         {
                             int colIndex = GetColumnIndex(cell.CellReference);
-                            if (colIndex > maxColumn)
-                                maxColumn = colIndex;
+                            if (colIndex > maxColumn) maxColumn = colIndex;
                         }
                     }
 
-                    // Fallback: Wenn alle CellReferences null sind, verwende einfach die Anzahl der Zellen
+                    // Fallback wenn keine CellReferences vorhanden
                     if (maxColumn == 0 && cells.Count > 0)
-                    {
                         maxColumn = cells.Count - 1;
-                    }
 
-                    // Iteriere durch alle Spalten (inklusive leere)
+                    List<string> cellValues = new List<string>();
+
                     for (int colIndex = 0; colIndex <= maxColumn; colIndex++)
                     {
                         string cellValue = "";
                         CellType cellType = CellType.Empty;
 
-                        // Finde Zelle für diese Spalte anhand der CellReference
-                        Cell cell = cells.FirstOrDefault(c => !string.IsNullOrEmpty(c.CellReference) && GetColumnIndex(c.CellReference) == colIndex);
+                        // Zelle anhand CellReference suchen - kein Fallback auf Index!
+                        Cell cell = cells.FirstOrDefault(c => !string.IsNullOrEmpty(c.CellReference)
+                                                           && GetColumnIndex(c.CellReference) == colIndex);
 
                         if (cell != null && cell.CellValue != null)
-                        {
                             cellValue = GetCellValueWithType(cell, stringTablePart, workbookPart, out cellType);
-                        }
 
-                        // Formatiere Zellwert für CSV
                         cellValues.Add(FormatCsvField(cellValue, separator, quoteAllText, cellType));
                     }
 
-                    // Schreibe Zeile
                     writer.WriteLine(string.Join(separator.ToString(), cellValues));
                 }
             }
         }
 
-        /// <summary>
-        /// Konvertiert CellReference (z.B. "A1", "B2", "AA1") zu Spalten-Index (0-basiert)
-        /// </summary>
         private static int GetColumnIndex(string cellReference)
         {
-            if (string.IsNullOrEmpty(cellReference))
-                return 0;
+            if (string.IsNullOrEmpty(cellReference)) return 0;
 
-            // Extrahiere Buchstaben (Spalte) aus CellReference
             string columnName = new string(cellReference.Where(c => char.IsLetter(c)).ToArray());
-
-            if (string.IsNullOrEmpty(columnName))
-                return 0;
+            if (string.IsNullOrEmpty(columnName)) return 0;
 
             int columnIndex = 0;
-
-            // Konvertiere Buchstaben zu Zahl (A=1, B=2, ..., Z=26, AA=27, AB=28, ...)
             for (int i = 0; i < columnName.Length; i++)
-            {
                 columnIndex = columnIndex * 26 + (columnName[i] - 'A' + 1);
-            }
 
-            return columnIndex - 1; // 0-basiert: A=0, B=1, etc.
+            return columnIndex - 1;
         }
 
-        /// <summary>
-        /// Extrahiert den Zellwert UND den Datentyp aus einer Excel-Zelle
-        /// </summary>
         private static string GetCellValueWithType(Cell cell, SharedStringTablePart stringTablePart, WorkbookPart workbookPart, out CellType cellType)
         {
-            cellType = CellType.Text; // Default
+            cellType = CellType.Text;
             string value = cell.CellValue.InnerText;
 
-            // SharedString = Text
             if (cell.DataType != null && cell.DataType.Value == CellValues.SharedString)
             {
                 cellType = CellType.Text;
                 if (stringTablePart != null)
-                {
                     return stringTablePart.SharedStringTable.Elements<SharedStringItem>().ElementAt(int.Parse(value)).InnerText;
-                }
                 return value;
             }
 
-            // Boolean
             if (cell.DataType != null && cell.DataType.Value == CellValues.Boolean)
             {
                 cellType = CellType.Boolean;
                 return value == "1" ? "TRUE" : "FALSE";
             }
 
-            // Inline String
             if (cell.DataType != null && cell.DataType.Value == CellValues.String)
             {
                 cellType = CellType.Text;
                 return value;
             }
 
-            // Prüfe ob die Zelle ein Datum-Format hat
-            bool isDateFormat = IsDateFormatted(cell, workbookPart);
-
-            if (isDateFormat)
+            if (IsDateFormatted(cell, workbookPart))
             {
                 cellType = CellType.Date;
-                // Behandle als Datum
                 if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double oaDate))
                 {
-                    try
-                    {
-                        DateTime date = DateTime.FromOADate(oaDate);
-                        return date.ToString("yyyy-MM-dd"); // ISO-Format
-                    }
-                    catch
-                    {
-                        // Ungültige OADate - falle zurück auf Zahl
-                        cellType = CellType.Number;
-                        return FormatNumber(value);
-                    }
+                    try { return DateTime.FromOADate(oaDate).ToString("yyyy-MM-dd"); }
+                    catch { cellType = CellType.Number; return FormatNumber(value); }
                 }
             }
 
-            // Nummer (nicht als Datum formatiert)
             if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double numericValue))
             {
                 cellType = CellType.Number;
                 return FormatNumber(value);
             }
 
-            // Fallback: Text
             cellType = CellType.Text;
             return value;
         }
 
-        /// <summary>
-        /// Prüft ob eine Zelle mit Datum-Format formatiert ist
-        /// </summary>
         private static bool IsDateFormatted(Cell cell, WorkbookPart workbookPart)
         {
-            if (cell.StyleIndex == null)
-                return false;
+            if (cell.StyleIndex == null) return false;
 
             try
             {
                 WorkbookStylesPart stylesPart = workbookPart.WorkbookStylesPart;
-                if (stylesPart == null || stylesPart.Stylesheet == null)
-                    return false;
+                if (stylesPart?.Stylesheet?.CellFormats == null) return false;
 
-                Stylesheet stylesheet = stylesPart.Stylesheet;
-                CellFormats cellFormats = stylesheet.CellFormats;
-
-                if (cellFormats == null)
-                    return false;
-
+                CellFormats cellFormats = stylesPart.Stylesheet.CellFormats;
                 uint styleIndex = cell.StyleIndex.Value;
-                if (styleIndex >= cellFormats.Count)
-                    return false;
+                if (styleIndex >= cellFormats.Count) return false;
 
                 CellFormat cellFormat = (CellFormat)cellFormats.ElementAt((int)styleIndex);
-                if (cellFormat.NumberFormatId == null)
-                    return false;
+                if (cellFormat.NumberFormatId == null) return false;
 
                 uint numFmtId = cellFormat.NumberFormatId.Value;
-
-                // Excel built-in Datumsformate: 14-22, 45-47
-                // 14: m/d/yyyy
-                // 15: d-mmm-yy
-                // 16: d-mmm
-                // 17: mmm-yy
-                // 18: h:mm AM/PM
-                // 19: h:mm:ss AM/PM
-                // 20: h:mm
-                // 21: h:mm:ss
-                // 22: m/d/yy h:mm
-                // 45-47: weitere Datumsformate
-
-                // Unser eigenes Schema: 164 (Datum)
-                bool isBuiltInDateFormat = (numFmtId >= 14 && numFmtId <= 22) || (numFmtId >= 45 && numFmtId <= 47);
-                bool isCustomDateFormat = (numFmtId == 164); // Unser eigenes Format
-
-                return isBuiltInDateFormat || isCustomDateFormat;
+                return (numFmtId >= 14 && numFmtId <= 22) || (numFmtId >= 45 && numFmtId <= 47) || numFmtId == 164;
             }
-            catch
-            {
-                return false;
-            }
+            catch { return false; }
         }
 
-        /// <summary>
-        /// Formatiert eine Zahl im deutschen Format (Komma als Dezimaltrennzeichen)
-        /// </summary>
         private static string FormatNumber(string value)
         {
             if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double numValue))
             {
-                // Prüfe ob es eine Ganzzahl ist
                 if (numValue == Math.Floor(numValue) && Math.Abs(numValue) < int.MaxValue)
-                {
-                    // Integer - keine Dezimalstellen
                     return numValue.ToString("0", CultureInfo.GetCultureInfo("de-DE"));
-                }
                 else
-                {
-                    // Decimal - mit Dezimalstellen (aber keine unnötigen Nullen)
                     return numValue.ToString("0.##", CultureInfo.GetCultureInfo("de-DE"));
-                }
             }
-
             return value;
         }
 
-        /// <summary>
-        /// Formatiert ein Feld für CSV (mit Quotes wenn nötig)
-        /// </summary>
         private static string FormatCsvField(string value, char separator, bool quoteAllText, CellType cellType)
         {
-            // Leere Werte: Quote nur wenn quoteAllText=true
             if (string.IsNullOrEmpty(value))
-            {
                 return quoteAllText ? "\"\"" : "";
-            }
 
             bool needsQuotes = false;
 
-            // IMMER Quotes wenn Sonderzeichen enthalten sind
             if (value.Contains(separator) || value.Contains('"') || value.Contains('\n') || value.Contains('\r'))
-            {
                 needsQuotes = true;
-            }
-            // Wenn quoteAllText aktiviert: Text-Felder und leere Felder quoten
             else if (quoteAllText && (cellType == CellType.Text || cellType == CellType.Empty))
-            {
                 needsQuotes = true;
-            }
 
             if (needsQuotes)
             {
-                // Escape Anführungszeichen (verdoppeln)
                 value = value.Replace("\"", "\"\"");
                 return $"\"{value}\"";
             }

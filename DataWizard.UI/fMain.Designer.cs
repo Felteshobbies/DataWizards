@@ -388,6 +388,7 @@
             this.logTextBox.Size = new System.Drawing.Size(770, 216);
             this.logTextBox.TabIndex = 0;
             this.logTextBox.Text = "";
+            this.logTextBox.LinkClicked += new System.Windows.Forms.LinkClickedEventHandler(this.logTextBox_LinkClicked);
             // 
             // fMain
             // 

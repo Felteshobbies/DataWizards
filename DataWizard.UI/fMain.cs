@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -69,6 +70,7 @@ namespace DataWizard.UI
             dragDropPanel.Paint += DragDropPanel_Paint;
 
             convertButton.Enabled = false;
+            convertButton.BackColor = Color.LightGray;
 
             cbCsvEncoding.Items.AddRange(new object[]
             {
@@ -212,6 +214,7 @@ namespace DataWizard.UI
             if (currentFiles.Count > 0)
             {
                 convertButton.Enabled = true;
+                convertButton.BackColor = Color.LightGreen;
 
                 UpdateStatusLabel($"{currentFiles.Count} file(s) selected");
             }
@@ -259,6 +262,8 @@ namespace DataWizard.UI
             if (currentFiles.Count == 0) return;
 
             convertButton.Enabled = false;
+            convertButton.BackColor = Color.LightGray;
+
             progressBar.Maximum = currentFiles.Count;
             progressBar.Value = 0;
 
@@ -373,7 +378,7 @@ namespace DataWizard.UI
             AddLog($"Konvertiere XLSX → CSV: {xlsxFile} → {csvFile}");
             XLS.ToCsv(xlsxFile, csvFile, optionXlsSeparator,
                  optionXlsEncoding,
-                 optionXlsQuoteAllText,               
+                 optionXlsQuoteAllText,
                  0,
                  optionXlsAllSheets);
 
@@ -467,17 +472,43 @@ namespace DataWizard.UI
 
         private void cbAllSheets_CheckedChanged(object sender, EventArgs e)
         {
-            optionXlsAllSheets = cbAllSheets.Checked;   
+            optionXlsAllSheets = cbAllSheets.Checked;
         }
 
         private void cbXlsSeparator_SelectedIndexChanged(object sender, EventArgs e)
         {
-            optionXlsSeparator = getSelectedSeparator(cbXlsSeparator.SelectedItem.ToString());              
+            optionXlsSeparator = getSelectedSeparator(cbXlsSeparator.SelectedItem.ToString());
         }
 
         private void cbXlsEncoding_SelectedIndexChanged(object sender, EventArgs e)
         {
             optionXlsEncoding = getSelectedEncoding(cbXlsEncoding.SelectedItem.ToString());
+        }
+
+        private void logTextBox_LinkClicked(object sender, LinkClickedEventArgs e)
+        {
+            openFile(e.LinkText);
+        }
+
+        private void openFile(string linkText)
+        {
+            try
+            {
+                if (File.Exists(linkText))
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = linkText,
+                        UseShellExecute = true
+                    });
+                }
+            }
+            catch (Exception)
+            {
+
+            }
+
+
         }
     }
 }
