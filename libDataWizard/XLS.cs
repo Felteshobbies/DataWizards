@@ -374,7 +374,8 @@ namespace libDataWizard
         // XLSX → CSV
         // ═══════════════════════════════════════════════════════════
 
-        public static List<string> ToCsv(string xlsxPath, string csvPath, char separator = ';', Encoding encoding = null, bool forceQuoteAll = false, int worksheetIndex = 0, bool exportAllSheets = false)
+        // quoteMode: 0=minimal (nur bei Bedarf), 1=Text-Felder (Standard), 2=alle Felder
+        public static List<string> ToCsv(string xlsxPath, string csvPath, char separator = ';', Encoding encoding = null, int quoteMode = 1, int worksheetIndex = 0, bool exportAllSheets = false)
         {
             if (encoding == null)
                 encoding = Encoding.UTF8;
@@ -398,7 +399,7 @@ namespace libDataWizard
                     {
                         string sheetName = SanitizeFileName(sheets[i].Name);
                         string outputPath = InsertSheetNameIntoPath(csvPath, sheetName);
-                        ExportSheetToCsv(sheets[i], workbookPart, outputPath, separator, encoding, forceQuoteAll);
+                        ExportSheetToCsv(sheets[i], workbookPart, outputPath, separator, encoding, quoteMode);
                         createdFiles.Add(outputPath);
                     }
                 }
@@ -408,7 +409,7 @@ namespace libDataWizard
                     if (sheet == null)
                         throw new ArgumentException($"Worksheet mit Index {worksheetIndex} nicht gefunden.");
 
-                    ExportSheetToCsv(sheet, workbookPart, csvPath, separator, encoding, forceQuoteAll);
+                    ExportSheetToCsv(sheet, workbookPart, csvPath, separator, encoding, quoteMode);
                     createdFiles.Add(csvPath);
                 }
             }
@@ -434,7 +435,7 @@ namespace libDataWizard
             return name;
         }
 
-        private static void ExportSheetToCsv(Sheet sheet, WorkbookPart workbookPart, string csvPath, char separator, Encoding encoding, bool forceQuoteAll)
+        private static void ExportSheetToCsv(Sheet sheet, WorkbookPart workbookPart, string csvPath, char separator, Encoding encoding, int quoteMode)
         {
             WorksheetPart worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id);
             SheetData sheetData = worksheetPart.Worksheet.Elements<SheetData>().First();
@@ -476,7 +477,7 @@ namespace libDataWizard
                         if (cell != null && cell.CellValue != null)
                             cellValue = GetCellValueWithType(cell, stringTablePart, workbookPart, out cellType);
 
-                        cellValues.Add(FormatCsvField(cellValue, separator, forceQuoteAll, cellType));
+                        cellValues.Add(FormatCsvField(cellValue, separator, quoteMode, cellType));
                     }
 
                     writer.WriteLine(string.Join(separator.ToString(), cellValues));
@@ -577,18 +578,21 @@ namespace libDataWizard
             return value;
         }
 
-        private static string FormatCsvField(string value, char separator, bool forceQuoteAll, CellType cellType)
+        private static string FormatCsvField(string value, char separator, int quoteMode, CellType cellType)
         {
+            if (quoteMode == 0) // kein Quoting
+                return value ?? "";
+
             if (string.IsNullOrEmpty(value))
                 return "\"\"";
 
             bool needsQuotes = false;
 
-            if (forceQuoteAll)
+            if (quoteMode == 2) // alle Felder
                 needsQuotes = true;
             else if (value.Contains(separator) || value.Contains('"') || value.Contains('\n') || value.Contains('\r'))
                 needsQuotes = true;
-            else if (cellType == CellType.Text || cellType == CellType.Empty)
+            else if (cellType == CellType.Text || cellType == CellType.Empty) // quoteMode == 1: Text-Felder
                 needsQuotes = true;
 
             if (needsQuotes)

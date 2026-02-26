@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DataWizard – Anleitung</title>
+  <style>
+    :root {
+      --gold:    #c8a000;
+      --gold-lt: #f5d85a;
+      --brown:   #6b3a1f;
+      --bg:      #fafaf7;
+      --card:    #ffffff;
+      --border:  #e0ddd5;
+      --text:    #2c2c2c;
+      --muted:   #6b6860;
+      --tag-csv: #2563eb;
+      --tag-xls: #16a34a;
+      --tag-gen: #7c3aed;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, var(--brown) 0%, #3d1f0a 100%);
+      color: #fff;
+      padding: 36px 48px 32px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .wand-icon {
+      font-size: 52px;
+      line-height: 1;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,.4));
+    }
+    header h1 { font-size: 2rem; font-weight: 700; letter-spacing: .5px; }
+    header p  { color: #d4b896; font-size: .95rem; margin-top: 4px; }
+
+    /* ── Nav ── */
+    nav {
+      background: var(--brown);
+      padding: 0 48px;
+      display: flex;
+      gap: 4px;
+      border-top: 1px solid rgba(255,255,255,.1);
+    }
+    nav a {
+      color: #d4b896;
+      text-decoration: none;
+      padding: 12px 18px;
+      font-size: .9rem;
+      border-bottom: 3px solid transparent;
+      transition: color .15s, border-color .15s;
+    }
+    nav a:hover { color: var(--gold-lt); border-color: var(--gold-lt); }
+
+    /* ── Layout ── */
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    /* ── Section headings ── */
+    section { margin-bottom: 56px; }
+    section > h2 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--brown);
+      border-bottom: 2px solid var(--gold);
+      padding-bottom: 8px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 24px 0 12px;
+      color: #3d1f0a;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+    }
+    .card-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 640px) { .card-row { grid-template-columns: 1fr; } }
+
+    /* ── Option table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .93rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    thead { background: #f0ebe3; }
+    th {
+      text-align: left;
+      padding: 10px 16px;
+      font-weight: 600;
+      font-size: .88rem;
+      color: var(--brown);
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 10px 16px;
+      border-bottom: 1px solid #f0ede8;
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fdf9f4; }
+
+    /* ── Tag / badge ── */
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: .78rem;
+      font-weight: 600;
+      color: #fff;
+      vertical-align: middle;
+      margin-left: 6px;
+    }
+    .tag-csv { background: var(--tag-csv); }
+    .tag-xls { background: var(--tag-xls); }
+    .tag-gen { background: var(--tag-gen); }
+
+    /* ── Checkbox state demo ── */
+    .state-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0ede8;
+    }
+    .state-row:last-child { border-bottom: none; }
+    .state-box {
+      width: 22px;
+      min-width: 22px;
+      height: 22px;
+      border: 2px solid #888;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      margin-top: 2px;
+      background: #fff;
+    }
+    .state-label { font-weight: 600; }
+    .state-desc  { color: var(--muted); font-size: .9rem; }
+
+    /* ── Step list ── */
+    .steps { counter-reset: step; list-style: none; }
+    .steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 14px;
+      margin-bottom: 14px;
+      align-items: flex-start;
+    }
+    .steps li::before {
+      content: counter(step);
+      background: var(--gold);
+      color: var(--brown);
+      font-weight: 700;
+      width: 26px;
+      min-width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .88rem;
+      margin-top: 1px;
+    }
+
+    /* ── Tip / Note ── */
+    .tip {
+      background: #fffbeb;
+      border-left: 4px solid var(--gold);
+      border-radius: 0 6px 6px 0;
+      padding: 12px 16px;
+      font-size: .92rem;
+      margin: 16px 0;
+      color: #5a4a00;
+    }
+    .info {
+      background: #eff6ff;
+      border-left: 4px solid #2563eb;
+      border-radius: 0 6px 6px 0;
+      padding: 12px 16px;
+      font-size: .92rem;
+      margin: 16px 0;
+      color: #1e3a8a;
+    }
+
+    /* ── Key shortcut ── */
+    kbd {
+      background: #f0ebe3;
+      border: 1px solid #c8b89a;
+      border-bottom: 2px solid #c8b89a;
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-size: .85rem;
+      font-family: monospace;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-size: .82rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+
+    code {
+      background: #f0ebe3;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: "Consolas", monospace;
+      font-size: .9em;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="wand-icon">🪄</div>
+  <div>
+    <h1>DataWizard</h1>
+    <p>CSV &harr; Excel Converter &nbsp;·&nbsp; Benutzeranleitung</p>
+  </div>
+</header>
+
+<nav>
+  <a href="#overview">Übersicht</a>
+  <a href="#quickstart">Schnellstart</a>
+  <a href="#convert">Convert-Tab</a>
+  <a href="#settings">Einstellungen</a>
+  <a href="#options-csv">CSV-Optionen</a>
+  <a href="#options-xls">Excel-Optionen</a>
+  <a href="#quoting">Quoting</a>
+  <a href="#formats">Dateiformate</a>
+  <a href="#tips">Tipps</a>
+</nav>
+
+<main>
+
+  <!-- ══════════════════════════ ÜBERSICHT ══════════════════════════ -->
+  <section id="overview">
+    <h2>🗺️ Übersicht</h2>
+    <p>
+      DataWizard konvertiert Textdateien (CSV, TXT, LOG) in Excel-Dateien (XLSX)
+      und umgekehrt. Dateien werden per Drag&nbsp;&amp;&nbsp;Drop oder über einen
+      Datei-Dialog geladen. Die Konvertierung läuft im Hintergrund und zeigt den
+      Fortschritt im Log-Tab.
+    </p>
+
+    <div class="card-row" style="margin-top:20px;">
+      <div class="card">
+        <h3 style="margin-top:0">CSV / TXT / LOG → XLSX <span class="tag tag-csv">CSV</span></h3>
+        <ul style="padding-left:18px; font-size:.93rem;">
+          <li>Automatische Separator-Erkennung</li>
+          <li>Automatische Encoding-Erkennung</li>
+          <li>Header-Zeile automatisch erkannt</li>
+          <li>Datentypen automatisch erkannt</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">XLSX → CSV <span class="tag tag-xls">XLSX</span></h3>
+        <ul style="padding-left:18px; font-size:.93rem;">
+          <li>Wählbarer Separator &amp; Encoding</li>
+          <li>3-stufiges Quoting-Verhalten</li>
+          <li>Alle Tabellenblätter exportieren</li>
+          <li>Datums- und Zahlformatierung</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════ SCHNELLSTART ══════════════════════════ -->
+  <section id="quickstart">
+    <h2>⚡ Schnellstart</h2>
+    <ol class="steps">
+      <li>Programm starten – der <strong>Convert-Tab</strong> öffnet sich automatisch.</li>
+      <li>
+        Datei(en) per <strong>Drag&nbsp;&amp;&nbsp;Drop</strong> auf das gestrichelte Feld
+        ziehen – oder auf das Feld klicken, um den Datei-Dialog zu öffnen.
+      </li>
+      <li>
+        Im Tab <strong>Settings</strong> Optionen anpassen, falls nötig
+        (Separator, Encoding, Quoting …).
+      </li>
+      <li>
+        Den großen grünen Button <strong>Convert</strong> klicken.
+      </li>
+      <li>
+        Fortschritt und Ergebnis im <strong>Log-Tab</strong> verfolgen.
+        Ausgabedatei liegt standardmäßig im selben Ordner wie die Quelldatei.
+      </li>
+    </ol>
+
+    <div class="tip">
+      💡 Mehrere Dateien auf einmal in das Feld ziehen – alle werden nacheinander
+      konvertiert.
+    </div>
+  </section>
+
+  <!-- ══════════════════════════ CONVERT-TAB ══════════════════════════ -->
+  <section id="convert">
+    <h2>🔄 Convert-Tab</h2>
+
+    <div class="card">
+      <h3 style="margin-top:0">Drag &amp; Drop Feld</h3>
+      <p>
+        Das große gestrichelte Feld nimmt Dateien per Drag&nbsp;&amp;&nbsp;Drop entgegen.
+        Ein Klick auf das Feld öffnet alternativ den Windows-Dateidialog mit
+        Mehrfachauswahl. Unterstützte Endungen:
+        <code>.csv</code>, <code>.txt</code>, <code>.log</code>, <code>.xlsx</code>
+      </p>
+      <p style="margin-top:10px;">Das Feld färbt sich grün, sobald Dateien ausgewählt wurden.</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">Fortschrittsbalken</h3>
+      <p>
+        Zeigt den Gesamtfortschritt über alle ausgewählten Dateien.
+        Jede erfolgreich konvertierte Datei erhöht den Balken um einen Schritt.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0">Convert-Button</h3>
+      <p>
+        Startet die Konvertierung aller geladenen Dateien im Hintergrund.
+        Der Button ist deaktiviert (grau), solange keine Dateien geladen sind.
+      </p>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════ SETTINGS ══════════════════════════ -->
+  <section id="settings">
+    <h2>⚙️ Settings-Tab – Allgemein</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:220px">Option</th>
+          <th>Beschreibung</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Overwrite files</strong></td>
+          <td>
+            Wenn aktiviert, wird eine bereits existierende Ausgabedatei
+            überschrieben. Wenn deaktiviert, wird automatisch ein Zähler an den
+            Dateinamen angehängt (<code>datei_1.xlsx</code>, <code>datei_2.xlsx</code>&nbsp;…).
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Output folder</strong></td>
+          <td>
+            Zielverzeichnis für alle Ausgabedateien. Leer lassen, damit die
+            Ausgabedatei im selben Ordner wie die Quelldatei landet.
+            Der <kbd>Pick</kbd>-Button öffnet einen Ordner-Dialog.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ══════════════════════════ CSV-OPTIONEN ══════════════════════════ -->
+  <section id="options-csv">
+    <h2>📄 CSV Convert Settings <span class="tag tag-csv">CSV → XLSX</span></h2>
+    <p style="margin-bottom:16px;">
+      Diese Einstellungen gelten für den Import von CSV-, TXT- und LOG-Dateien
+      beim Konvertieren nach XLSX.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:160px">Option</th>
+          <th style="width:200px">Werte</th>
+          <th>Beschreibung</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Encoding</strong></td>
+          <td>
+            Auto<br>
+            UTF-8<br>
+            ISO-8859-1<br>
+            Windows-1252
+          </td>
+          <td>
+            Zeichenkodierung der Quelldatei.
+            <strong>Auto</strong> erkennt die Kodierung automatisch anhand
+            des Dateiinhalts (empfohlen). Manuell wählen, wenn die automatische
+            Erkennung falsche Ergebnisse liefert (z.&nbsp;B. bei reinen
+            ASCII-Dateien ohne eindeutige Byte-Order-Markierung).
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Separator</strong></td>
+          <td>
+            Auto<br>
+            Semicolon&nbsp;(<code>;</code>)<br>
+            Comma&nbsp;(<code>,</code>)<br>
+            Tab<br>
+            Pipe&nbsp;(<code>|</code>)<br>
+            Colon&nbsp;(<code>:</code>)
+          </td>
+          <td>
+            Feldtrennzeichen der Quelldatei.
+            <strong>Auto</strong> zählt die Häufigkeit aller Kandidaten in
+            den ersten 100 Zeilen und wählt den wahrscheinlichsten Separator.
+            Die erkannte Wahrscheinlichkeit wird im Log ausgegeben.
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Header</strong></td>
+          <td>
+            Auto<br>
+            Header<br>
+            No header
+          </td>
+          <td>
+            Gibt an, ob die erste Zeile eine Kopfzeile enthält.
+            <strong>Auto</strong> analysiert die erste und zweite Zeile:
+            enthält die erste Zeile bekannte Feldnamen oder keine Zahlen,
+            wird sie als Header gewertet.
+            <strong>Header</strong> / <strong>No header</strong> erzwingt
+            die Auswahl unabhängig vom Inhalt.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="info">
+      ℹ️ Die Erkennungsergebnisse (Encoding, Separator, Header-Status, Feldanzahl)
+      werden im <strong>Log-Tab</strong> für jede Datei protokolliert.
+    </div>
+  </section>
+
+  <!-- ══════════════════════════ XLS-OPTIONEN ══════════════════════════ -->
+  <section id="options-xls">
+    <h2>📊 Excel Convert Settings <span class="tag tag-xls">XLSX → CSV</span></h2>
+    <p style="margin-bottom:16px;">
+      Diese Einstellungen gelten für den Export von XLSX-Dateien nach CSV.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:160px">Option</th>
+          <th style="width:200px">Werte</th>
+          <th>Beschreibung</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Encoding</strong></td>
+          <td>
+            UTF-8<br>
+            UTF-8 mit BOM<br>
+            Windows-1252<br>
+            ISO-8859-1
+          </td>
+          <td>
+            Zeichenkodierung der Ausgabe-CSV.
+            <strong>UTF-8</strong> ist der Standard und für die meisten
+            modernen Anwendungen geeignet. <strong>UTF-8 mit BOM</strong>
+            fügt eine Byte-Order-Markierung hinzu, die ältere Excel-Versionen
+            beim direkten Öffnen benötigen, um Umlaute korrekt darzustellen.
+            <strong>Windows-1252 / ISO-8859-1</strong> für Legacy-Systeme.
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Separator</strong></td>
+          <td>
+            Semicolon&nbsp;(<code>;</code>)<br>
+            Comma&nbsp;(<code>,</code>)<br>
+            Tab<br>
+            Pipe&nbsp;(<code>|</code>)<br>
+            Colon&nbsp;(<code>:</code>)
+          </td>
+          <td>
+            Feldtrennzeichen in der Ausgabe-CSV. Standard ist
+            <strong>Semicolon</strong>, da dieser in deutschsprachigen
+            Excel-Versionen als Standard gilt. Für internationale Kompatibilität
+            (RFC&nbsp;4180) <strong>Comma</strong> wählen.
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Force text quote</strong></td>
+          <td>Dreistufige Checkbox</td>
+          <td>Steuert das Quoting-Verhalten – Details im nächsten Abschnitt.</td>
+        </tr>
+        <tr>
+          <td><strong>All sheets</strong></td>
+          <td>☐ / ☑</td>
+          <td>
+            Wenn aktiviert, wird jedes Tabellenblatt der XLSX-Datei als separate
+            CSV-Datei exportiert. Der Blattname wird automatisch an den Dateinamen
+            angehängt (<code>datei_Tabelle1.csv</code>, <code>datei_Tabelle2.csv</code>&nbsp;…).
+            Wenn deaktiviert, wird nur das erste Tabellenblatt exportiert.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ══════════════════════════ QUOTING ══════════════════════════ -->
+  <section id="quoting">
+    <h2>🔤 Quoting – Force text quote</h2>
+    <p style="margin-bottom:16px;">
+      Die Checkbox <strong>Force text quote</strong> ist eine <em>Dreizustand-Checkbox</em>
+      (Three-State). Durch wiederholtes Klicken durchläuft sie alle drei Zustände.
+    </p>
+
+    <div class="card">
+      <div class="state-row">
+        <div class="state-box"></div>
+        <div>
+          <div class="state-label">Unchecked – Kein Quoting</div>
+          <div class="state-desc">
+            Felder werden ohne Anführungszeichen ausgegeben – auch dann, wenn sie
+            den Separator, Zeilenumbrüche oder <code>"</code>-Zeichen enthalten.
+            Geeignet, wenn das Zielsystem kein CSV-Quoting versteht oder wenn
+            die Daten sicher keine Sonderzeichen enthalten.
+          </div>
+        </div>
+      </div>
+      <div class="state-row">
+        <div class="state-box" style="background:#e0d0ff; border-color:#7c3aed; color:#7c3aed; font-size:10px;">▪</div>
+        <div>
+          <div class="state-label">Indeterminate (Standard) – Text-Felder</div>
+          <div class="state-desc">
+            <strong>Textfelder und leere Felder</strong> werden immer in
+            Anführungszeichen gesetzt. Zahlen und Datumswerte bleiben unquotet,
+            sofern sie keinen Separator oder <code>"</code> enthalten.
+            Entspricht dem Excel-Standard-Verhalten beim CSV-Export.
+          </div>
+        </div>
+      </div>
+      <div class="state-row">
+        <div class="state-box" style="background:#16a34a; border-color:#16a34a; color:#fff;">✓</div>
+        <div>
+          <div class="state-label">Checked – Alle Felder</div>
+          <div class="state-desc">
+            <strong>Jedes Feld</strong> – unabhängig vom Typ – wird in
+            Anführungszeichen gesetzt. Nützlich, wenn das Zielsystem alle Werte
+            als Text interpretieren soll oder eine strikte RFC&nbsp;4180-Konformität
+            erwartet wird.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Anführungszeichen in Feldwerten</h3>
+    <p>
+      Enthält ein Feldwert selbst ein <code>"</code>-Zeichen (z.&nbsp;B. Zollangabe
+      <code>4"</code>), wird es gemäß CSV-Standard durch Verdoppelung maskiert:
+      <code>4""</code> innerhalb des gequoteten Feldes.
+    </p>
+    <div class="tip">
+      💡 Beispiel: Der Zellwert <code>SEP. ANLAGE 4" ANSI</code> wird in der CSV als
+      <code>"SEP. ANLAGE 4&quot;&quot; ANSI"</code> exportiert – so kann ihn jede
+      CSV-kompatible Anwendung fehlerfrei einlesen.
+    </div>
+  </section>
+
+  <!-- ══════════════════════════ DATEIFORMATE ══════════════════════════ -->
+  <section id="formats">
+    <h2>📋 Unterstützte Dateiformate &amp; Datentypen</h2>
+
+    <h3>Eingabe (CSV → XLSX)</h3>
+    <table>
+      <thead>
+        <tr><th>Endung</th><th>Beschreibung</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>.csv</code></td><td>Komma/Semikolon-getrennte Textdatei</td></tr>
+        <tr><td><code>.txt</code></td><td>Beliebige Textdatei mit trennzeichen-separiertem Inhalt</td></tr>
+        <tr><td><code>.log</code></td><td>Logdateien mit trennzeichen-separiertem Inhalt</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Eingabe (XLSX → CSV)</h3>
+    <table>
+      <thead>
+        <tr><th>Endung</th><th>Beschreibung</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>.xlsx</code></td><td>Excel-Arbeitsmappe (Office Open XML, ab Excel 2007)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Automatische Datentyp-Erkennung (CSV → XLSX)</h3>
+    <table>
+      <thead>
+        <tr><th>Typ</th><th>Erkennung</th><th>Zellenformat</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Integer</strong></td>
+          <td>Ganzzahl ohne Dezimalstellen</td>
+          <td>Zahl, kein Dezimalformat</td>
+        </tr>
+        <tr>
+          <td><strong>Decimal</strong></td>
+          <td>Dezimalzahl (Punkt oder Komma als Dezimaltrennzeichen)</td>
+          <td>Zahl mit <code>#,##0.00</code></td>
+        </tr>
+        <tr>
+          <td><strong>Datum</strong></td>
+          <td>Enthält <code>-</code>, <code>/</code> oder <code>.</code> und ist parsebar, Jahr 1900–2100</td>
+          <td><code>dd.mm.yyyy</code></td>
+        </tr>
+        <tr>
+          <td><strong>Text</strong></td>
+          <td>Alles andere; gequotete Felder werden immer als Text behandelt</td>
+          <td>Allgemein (String)</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ══════════════════════════ TIPPS ══════════════════════════ -->
+  <section id="tips">
+    <h2>💡 Tipps &amp; Häufige Fragen</h2>
+
+    <h3>Umlaute werden falsch angezeigt</h3>
+    <p>
+      Das Encoding der Quelldatei stimmt nicht. Bei CSV → XLSX das Encoding
+      manuell auf <strong>Windows-1252</strong> oder <strong>ISO-8859-1</strong>
+      setzen. Bei XLSX → CSV das Ausgabe-Encoding auf
+      <strong>UTF-8 mit BOM</strong> stellen, wenn Excel die Datei direkt öffnen soll.
+    </p>
+
+    <h3>Excel erkennt den Separator nicht</h3>
+    <p>
+      In deutschen Excel-Versionen wird <strong>Semicolon&nbsp;(<code>;</code>)</strong>
+      als Standard-Separator für CSV erwartet. Den Separator beim Export auf
+      <em>Semicolon</em> stellen.
+    </p>
+
+    <h3>Ausgabedatei wird nicht erstellt / Fehler im Log</h3>
+    <p>
+      Prüfen, ob <strong>Overwrite files</strong> aktiviert ist, wenn die Datei
+      bereits existiert. Andernfalls wird automatisch eine nummerierte Variante
+      erstellt (<code>datei_1.xlsx</code>).
+    </p>
+
+    <h3>Nur das erste Tabellenblatt wird exportiert</h3>
+    <p>
+      <strong>All sheets</strong> in den Excel Convert Settings aktivieren,
+      um alle Tabellenblätter als separate CSV-Dateien zu exportieren.
+    </p>
+
+    <h3>Zollzeichen (<code>"</code>) werden doppelt ausgegeben</h3>
+    <p>
+      Das ist korrektes CSV-Verhalten: <code>""</code> innerhalb eines gequoteten
+      Feldes steht für ein einzelnes <code>"</code>-Zeichen. Jede CSV-konforme
+      Anwendung (Excel, LibreOffice …) liest dies korrekt ein.
+    </p>
+
+    <h3>Log löschen</h3>
+    <p>
+      Im <strong>Log-Tab</strong> den Button <kbd>Clear Log</kbd> klicken.
+    </p>
+
+    <div class="info">
+      ℹ️ Im Log erscheinen Einträge mit <strong style="color:#16a34a">✓</strong>
+      (Erfolg) oder <strong style="color:#dc2626">✗</strong> (Fehler) und dem
+      Dateinamen der Quell- und Ausgabedatei.
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  DataWizard &nbsp;·&nbsp; CSV &harr; Excel Converter &nbsp;·&nbsp; 🪄
+</footer>
+
+</body>
+</html>

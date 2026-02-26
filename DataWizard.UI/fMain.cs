@@ -33,7 +33,7 @@ namespace DataWizard.UI
 
         private Encoding optionXlsEncoding = null;
         private char optionXlsSeparator = '\0';
-        private bool optionXlsForceQuoteAll = false;
+        private int optionXlsQuoteMode = 1; // 0=minimal, 1=text (default), 2=all
         private bool optionXlsAllSheets = false;
 
 
@@ -42,6 +42,7 @@ namespace DataWizard.UI
             InitializeComponent();
 
             this.Text = "DataWizard - CSV ↔ Excel Converter";
+            this.Icon = CreateMagicWandIcon();
             this.MinimumSize = new Size(800, 300);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.BackColor = Color.White;
@@ -94,7 +95,8 @@ namespace DataWizard.UI
                 "Semicolon (;)",
                 "Comma (,)",
                 "Tab",
-                "Pipe (|)"
+                "Pipe (|)",
+                "Colon (:)"
            });
             cbCsvSeparator.SelectedIndex = 0;
             cbXlsSeparator.Items.AddRange(new object[]
@@ -102,7 +104,8 @@ namespace DataWizard.UI
                 "Semicolon (;)",
                 "Comma (,)",
                 "Tab",
-                "Pipe (|)"
+                "Pipe (|)",
+                "Colon (:)"
            });
             cbXlsSeparator.SelectedIndex = 0;
 
@@ -378,7 +381,7 @@ namespace DataWizard.UI
             AddLog($"Konvertiere XLSX → CSV: {xlsxFile} → {csvFile}");
             XLS.ToCsv(xlsxFile, csvFile, optionXlsSeparator,
                  optionXlsEncoding,
-                 optionXlsForceQuoteAll,
+                 optionXlsQuoteMode,
                  0,
                  optionXlsAllSheets);
 
@@ -431,6 +434,8 @@ namespace DataWizard.UI
                     return '\t';
                 case "Pipe (|)":
                     return '|';
+                case "Colon (:)":
+                    return ':';
                 default:
                     return '\0';
             }
@@ -466,7 +471,12 @@ namespace DataWizard.UI
 
         private void cbQuoteAllText_CheckedChanged(object sender, EventArgs e)
         {
-            optionXlsForceQuoteAll = cbQuoteAllText.Checked;
+            switch (cbQuoteAllText.CheckState)
+            {
+                case CheckState.Unchecked:     optionXlsQuoteMode = 0; break;
+                case CheckState.Indeterminate: optionXlsQuoteMode = 1; break;
+                case CheckState.Checked:       optionXlsQuoteMode = 2; break;
+            }
         }
 
         private void cbAllSheets_CheckedChanged(object sender, EventArgs e)
@@ -506,8 +516,61 @@ namespace DataWizard.UI
             {
 
             }
+        }
 
+        private Icon CreateMagicWandIcon()
+        {
+            Bitmap bmp = new Bitmap(32, 32);
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                g.Clear(Color.Transparent);
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
+                // Wand-Stab (braun, diagonal)
+                using (Pen wandPen = new Pen(Color.FromArgb(139, 90, 43), 2.5f))
+                {
+                    wandPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+                    wandPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+                    g.DrawLine(wandPen, 4, 28, 21, 11);
+                }
+
+                // Stern an der Spitze (gold)
+                DrawStar(g, 25, 7, 6.5f, Color.Gold, Color.FromArgb(200, 180, 0));
+
+                // Glitzerpunkte (gelb)
+                using (Brush sparkBrush = new SolidBrush(Color.FromArgb(255, 230, 50)))
+                {
+                    g.FillEllipse(sparkBrush,  9, 16, 2.5f, 2.5f);
+                    g.FillEllipse(sparkBrush, 14,  5, 2f,   2f);
+                    g.FillEllipse(sparkBrush,  4, 22, 2f,   2f);
+                    g.FillEllipse(sparkBrush, 17, 18, 1.5f, 1.5f);
+                }
+            }
+
+            IntPtr hIcon = bmp.GetHicon();
+            return Icon.FromHandle(hIcon);
+        }
+
+        private void DrawStar(Graphics g, float cx, float cy, float size, Color fillColor, Color outlineColor)
+        {
+            int points = 5;
+            PointF[] pts = new PointF[points * 2];
+            double angleOffset = -Math.PI / 2;
+            float inner = size * 0.42f;
+
+            for (int i = 0; i < points * 2; i++)
+            {
+                double angle = angleOffset + i * Math.PI / points;
+                float r = (i % 2 == 0) ? size : inner;
+                pts[i] = new PointF(cx + r * (float)Math.Cos(angle),
+                                    cy + r * (float)Math.Sin(angle));
+            }
+
+            using (Brush b = new SolidBrush(fillColor))
+                g.FillPolygon(b, pts);
+
+            using (Pen p = new Pen(outlineColor, 0.8f))
+                g.DrawPolygon(p, pts);
         }
     }
 }

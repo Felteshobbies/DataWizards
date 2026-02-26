@@ -216,6 +216,8 @@
             // cbQuoteAllText
             // 
             this.cbQuoteAllText.AutoSize = true;
+            this.cbQuoteAllText.CheckState = System.Windows.Forms.CheckState.Indeterminate;
+            this.cbQuoteAllText.ThreeState = true;
             this.cbQuoteAllText.Location = new System.Drawing.Point(136, 93);
             this.cbQuoteAllText.Name = "cbQuoteAllText";
             this.cbQuoteAllText.Size = new System.Drawing.Size(140, 21);
