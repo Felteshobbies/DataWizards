@@ -33,7 +33,7 @@ namespace DataWizard.UI
 
         private Encoding optionXlsEncoding = null;
         private char optionXlsSeparator = '\0';
-        private bool optionXlsQuoteAllText = false;
+        private bool optionXlsForceQuoteAll = false;
         private bool optionXlsAllSheets = false;
 
 
@@ -378,7 +378,7 @@ namespace DataWizard.UI
             AddLog($"Konvertiere XLSX → CSV: {xlsxFile} → {csvFile}");
             XLS.ToCsv(xlsxFile, csvFile, optionXlsSeparator,
                  optionXlsEncoding,
-                 optionXlsQuoteAllText,
+                 optionXlsForceQuoteAll,
                  0,
                  optionXlsAllSheets);
 
@@ -466,8 +466,7 @@ namespace DataWizard.UI
 
         private void cbQuoteAllText_CheckedChanged(object sender, EventArgs e)
         {
-            optionXlsQuoteAllText = cbQuoteAllText.Checked;
-
+            optionXlsForceQuoteAll = cbQuoteAllText.Checked;
         }
 
         private void cbAllSheets_CheckedChanged(object sender, EventArgs e)

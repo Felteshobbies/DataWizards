@@ -216,13 +216,11 @@
             // cbQuoteAllText
             // 
             this.cbQuoteAllText.AutoSize = true;
-            this.cbQuoteAllText.Checked = true;
-            this.cbQuoteAllText.CheckState = System.Windows.Forms.CheckState.Checked;
             this.cbQuoteAllText.Location = new System.Drawing.Point(136, 93);
             this.cbQuoteAllText.Name = "cbQuoteAllText";
-            this.cbQuoteAllText.Size = new System.Drawing.Size(110, 21);
+            this.cbQuoteAllText.Size = new System.Drawing.Size(140, 21);
             this.cbQuoteAllText.TabIndex = 7;
-            this.cbQuoteAllText.Text = "Quote all text";
+            this.cbQuoteAllText.Text = "Force text quote";
             this.cbQuoteAllText.UseVisualStyleBackColor = true;
             this.cbQuoteAllText.CheckedChanged += new System.EventHandler(this.cbQuoteAllText_CheckedChanged);
             // 

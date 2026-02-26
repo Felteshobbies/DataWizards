@@ -358,8 +358,9 @@ namespace DataWizard
                         closingQuote = line.IndexOf('"', closingQuote + 2);
                     }
 
-                    if (closingQuote == -1) closingQuote = line.Length; // Kein schließendes Hochkomma gefunden                   
-                    result.Add(new CsvField { Value = line.Substring(index + 1, closingQuote - index - 1), Quotes = true });
+                    if (closingQuote == -1) closingQuote = line.Length; // Kein schließendes Hochkomma gefunden
+                    string rawValue = line.Substring(index + 1, closingQuote - index - 1);
+                    result.Add(new CsvField { Value = rawValue.Replace("\"\"", "\""), Quotes = true });
                     index = closingQuote + 1;
 
                     // Überspringe das Trennzeichen nach dem geschlossenen Hochkomma
