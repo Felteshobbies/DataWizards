@@ -54,6 +54,8 @@
             this.cbCsvEncoding = new System.Windows.Forms.ComboBox();
             this.watchTab = new System.Windows.Forms.TabPage();
             this.logTab = new System.Windows.Forms.TabPage();
+            this.helpTab = new System.Windows.Forms.TabPage();
+            this.webBrowserHelp = new System.Windows.Forms.WebBrowser();
             this.buttonPanel = new System.Windows.Forms.Panel();
             this.btClearLog = new System.Windows.Forms.Button();
             this.logTextBox = new System.Windows.Forms.RichTextBox();
@@ -63,6 +65,7 @@
             this.groupBox2.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.logTab.SuspendLayout();
+            this.helpTab.SuspendLayout();
             this.buttonPanel.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -72,6 +75,7 @@
             this.mainTabControl.Controls.Add(this.settingsTab);
             this.mainTabControl.Controls.Add(this.watchTab);
             this.mainTabControl.Controls.Add(this.logTab);
+            this.mainTabControl.Controls.Add(this.helpTab);
             this.mainTabControl.Dock = System.Windows.Forms.DockStyle.Fill;
             this.mainTabControl.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.mainTabControl.Location = new System.Drawing.Point(0, 0);
@@ -389,9 +393,30 @@
             this.logTextBox.TabIndex = 0;
             this.logTextBox.Text = "";
             this.logTextBox.LinkClicked += new System.Windows.Forms.LinkClickedEventHandler(this.logTextBox_LinkClicked);
-            // 
+            //
+            // helpTab
+            //
+            this.helpTab.Controls.Add(this.webBrowserHelp);
+            this.helpTab.Location = new System.Drawing.Point(4, 29);
+            this.helpTab.Name = "helpTab";
+            this.helpTab.Padding = new System.Windows.Forms.Padding(3);
+            this.helpTab.Size = new System.Drawing.Size(776, 278);
+            this.helpTab.TabIndex = 4;
+            this.helpTab.Text = "tabPage5";
+            this.helpTab.UseVisualStyleBackColor = true;
+            //
+            // webBrowserHelp
+            //
+            this.webBrowserHelp.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.webBrowserHelp.Location = new System.Drawing.Point(3, 3);
+            this.webBrowserHelp.MinimumSize = new System.Drawing.Size(20, 20);
+            this.webBrowserHelp.Name = "webBrowserHelp";
+            this.webBrowserHelp.Size = new System.Drawing.Size(770, 272);
+            this.webBrowserHelp.TabIndex = 0;
+            this.webBrowserHelp.ScriptErrorsSuppressed = true;
+            //
             // fMain
-            // 
+            //
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(784, 311);
@@ -407,6 +432,7 @@
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.logTab.ResumeLayout(false);
+            this.helpTab.ResumeLayout(false);
             this.buttonPanel.ResumeLayout(false);
             this.ResumeLayout(false);
 
@@ -443,5 +469,7 @@
         private System.Windows.Forms.ComboBox cbHeader;
         private System.Windows.Forms.CheckBox cbAllSheets;
         private System.Windows.Forms.CheckBox cbQuoteAllText;
+        private System.Windows.Forms.TabPage helpTab;
+        private System.Windows.Forms.WebBrowser webBrowserHelp;
     }
 }

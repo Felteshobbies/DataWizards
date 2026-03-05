@@ -42,7 +42,8 @@ namespace DataWizard.UI
             InitializeComponent();
 
             this.Text = "DataWizard - CSV ↔ Excel Converter";
-            this.Icon = CreateMagicWandIcon();
+            Icon wizardIcon = LoadWizardIcon();
+            if (wizardIcon != null) this.Icon = wizardIcon;
             this.MinimumSize = new Size(800, 300);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.BackColor = Color.White;
@@ -58,6 +59,8 @@ namespace DataWizard.UI
             settingsTab.Text = "Settings";
             watchTab.Text = "Watcher";
             logTab.Text = "Log";
+            helpTab.Text = "Help";
+            LoadHelp();
 
             // Status Bar
             StatusStrip statusStrip = new StatusStrip();
@@ -518,59 +521,63 @@ namespace DataWizard.UI
             }
         }
 
-        private Icon CreateMagicWandIcon()
+        private void LoadHelp()
         {
-            Bitmap bmp = new Bitmap(32, 32);
-            using (Graphics g = Graphics.FromImage(bmp))
-            {
-                g.Clear(Color.Transparent);
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
-                // Wand-Stab (braun, diagonal)
-                using (Pen wandPen = new Pen(Color.FromArgb(139, 90, 43), 2.5f))
-                {
-                    wandPen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
-                    wandPen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
-                    g.DrawLine(wandPen, 4, 28, 21, 11);
-                }
-
-                // Stern an der Spitze (gold)
-                DrawStar(g, 25, 7, 6.5f, Color.Gold, Color.FromArgb(200, 180, 0));
-
-                // Glitzerpunkte (gelb)
-                using (Brush sparkBrush = new SolidBrush(Color.FromArgb(255, 230, 50)))
-                {
-                    g.FillEllipse(sparkBrush,  9, 16, 2.5f, 2.5f);
-                    g.FillEllipse(sparkBrush, 14,  5, 2f,   2f);
-                    g.FillEllipse(sparkBrush,  4, 22, 2f,   2f);
-                    g.FillEllipse(sparkBrush, 17, 18, 1.5f, 1.5f);
-                }
-            }
-
-            IntPtr hIcon = bmp.GetHicon();
-            return Icon.FromHandle(hIcon);
+            string helpFile = FindHelpFile();
+            if (helpFile != null)
+                webBrowserHelp.Navigate(helpFile);
+            else
+                webBrowserHelp.DocumentText = "<html><body style='font-family:Segoe UI;padding:20px'><h2>Help not found</h2><p>help.html wurde nicht gefunden.</p></body></html>";
         }
 
-        private void DrawStar(Graphics g, float cx, float cy, float size, Color fillColor, Color outlineColor)
+        private string FindHelpFile()
         {
-            int points = 5;
-            PointF[] pts = new PointF[points * 2];
-            double angleOffset = -Math.PI / 2;
-            float inner = size * 0.42f;
+            // 1. Neben der exe (Release)
+            string path = Path.Combine(System.Windows.Forms.Application.StartupPath, "help.html");
+            if (File.Exists(path)) return path;
 
-            for (int i = 0; i < points * 2; i++)
+            // 2. Entwicklungsumgebung: von bin\Debug aus nach oben suchen
+            string dir = System.Windows.Forms.Application.StartupPath;
+            for (int i = 0; i < 5; i++)
             {
-                double angle = angleOffset + i * Math.PI / points;
-                float r = (i % 2 == 0) ? size : inner;
-                pts[i] = new PointF(cx + r * (float)Math.Cos(angle),
-                                    cy + r * (float)Math.Sin(angle));
+                string parent = Path.GetDirectoryName(dir);
+                if (parent == null || parent == dir) break;
+                dir = parent;
+
+                foreach (string sub in new[] { "DataWizard.UI", "" })
+                {
+                    string candidate = string.IsNullOrEmpty(sub)
+                        ? Path.Combine(dir, "help.html")
+                        : Path.Combine(dir, sub, "help.html");
+                    if (File.Exists(candidate)) return candidate;
+                }
             }
+            return null;
+        }
 
-            using (Brush b = new SolidBrush(fillColor))
-                g.FillPolygon(b, pts);
+        private Icon LoadWizardIcon()
+        {
+            // 1. Neben der exe (Release)
+            string path = Path.Combine(System.Windows.Forms.Application.StartupPath, "wizard.ico");
+            if (File.Exists(path)) return new Icon(path);
 
-            using (Pen p = new Pen(outlineColor, 0.8f))
-                g.DrawPolygon(p, pts);
+            // 2. Entwicklungsumgebung: von bin\Debug aus nach oben suchen
+            string dir = System.Windows.Forms.Application.StartupPath;
+            for (int i = 0; i < 5; i++)
+            {
+                string parent = Path.GetDirectoryName(dir);
+                if (parent == null || parent == dir) break;
+                dir = parent;
+
+                foreach (string sub in new[] { "DataWizard.UI", "" })
+                {
+                    string candidate = string.IsNullOrEmpty(sub)
+                        ? Path.Combine(dir, "wizard.ico")
+                        : Path.Combine(dir, sub, "wizard.ico");
+                    if (File.Exists(candidate)) return new Icon(candidate);
+                }
+            }
+            return null;
         }
     }
 }
