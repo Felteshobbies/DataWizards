@@ -1,0 +1,246 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:DataWizard.App.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="620"
+             x:Class="DataWizard.App.Views.ConvertView"
+             x:DataType="vm:ConvertViewModel"
+             DragDrop.AllowDrop="True">
+
+    <Grid ColumnDefinitions="1.05*,Auto,1.35*" Margin="16">
+
+        <!-- ══ Left: queue and controls ══════════════════════════════════ -->
+        <Grid Grid.Column="0" RowDefinitions="Auto,*,Auto,Auto,Auto" >
+
+            <!-- Drop zone -->
+            <Border Grid.Row="0"
+                    Name="DropZone"
+                    Height="120"
+                    CornerRadius="8"
+                    BorderThickness="2"
+                    Cursor="Hand"
+                    Margin="0,0,0,12"
+                    PointerReleased="OnDropZoneClicked">
+                <Border.Styles>
+                    <Style Selector="Border#DropZone">
+                        <Setter Property="Background" Value="{DynamicResource DwDropZone}" />
+                        <Setter Property="BorderBrush" Value="{DynamicResource DwBorderStrong}" />
+                    </Style>
+                </Border.Styles>
+
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="4">
+                    <TextBlock Text="Drop files or folders here" Classes="h2"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="or click to browse" Classes="hint"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text=".csv  .txt  .log  .tsv  .dat  .xlsx  .xlsm"
+                               Classes="hint mono" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                </StackPanel>
+            </Border>
+
+            <!-- Queue -->
+            <Border Grid.Row="1" Classes="card" Padding="0">
+                <Grid RowDefinitions="Auto,*">
+                    <Border Grid.Row="0" Padding="12,8"
+                            BorderBrush="{DynamicResource DwBorder}" BorderThickness="0,0,0,1">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0" Text="{Binding FileCountText}" Classes="h2" />
+                            <Button Grid.Column="1" Content="Clear" Padding="10,3"
+                                    Command="{Binding ClearCommand}" />
+                        </Grid>
+                    </Border>
+
+                    <ListBox Grid.Row="1"
+                             ItemsSource="{Binding Files}"
+                             SelectedItem="{Binding SelectedFile}"
+                             Background="Transparent"
+                             BorderThickness="0">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:FileRow">
+                                <Grid ColumnDefinitions="28,*,Auto" Margin="0,2">
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding StateGlyph}"
+                                               Classes="mono"
+                                               Classes.success="{Binding IsDone}"
+                                               Classes.error="{Binding IsFailed}"
+                                               VerticalAlignment="Center" />
+
+                                    <StackPanel Grid.Column="1" Spacing="1">
+                                        <TextBlock Text="{Binding FileName}" FontWeight="Medium"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Classes="hint"
+                                                   Text="{Binding DirectionText}" />
+                                        <TextBlock Classes="hint"
+                                                   Text="{Binding Detail}"
+                                                   IsVisible="{Binding Detail, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+
+                                    <TextBlock Grid.Column="2" Text="{Binding SizeText}"
+                                               Classes="hint" VerticalAlignment="Center" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+
+            <!-- Output folder -->
+            <Border Grid.Row="2" Classes="card" Margin="0,12,0,0" Padding="12">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Output folder" Classes="h2" />
+                    <Grid ColumnDefinitions="*,Auto,Auto">
+                        <TextBox Grid.Column="0" Text="{Binding OutputFolder}"
+                                 PlaceholderText="(same folder as the source file)" />
+                        <Button Grid.Column="1" Content="Browse" Margin="6,0,0,0"
+                                Command="{Binding BrowseOutputFolderCommand}" />
+                        <Button Grid.Column="2" Content="Clear" Margin="6,0,0,0"
+                                Command="{Binding ClearOutputFolderCommand}" />
+                    </Grid>
+                    <CheckBox Content="Overwrite existing files"
+                              IsChecked="{Binding Overwrite}"
+                              ToolTip.Tip="When off, a numeric suffix is added instead of replacing a file." />
+                </StackPanel>
+            </Border>
+
+            <!-- Progress -->
+            <ProgressBar Grid.Row="3" Height="6" Margin="0,12,0,0"
+                         Minimum="0" Maximum="100"
+                         Value="{Binding ProgressValue}" />
+
+            <!-- Action buttons -->
+            <Grid Grid.Row="4" ColumnDefinitions="*,Auto" Margin="0,12,0,0">
+                <Button Grid.Column="0" Classes="primary"
+                        Content="Convert"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        Command="{Binding ConvertCommand}" />
+                <Button Grid.Column="1" Content="Cancel" Margin="8,0,0,0" Padding="18,10"
+                        Command="{Binding CancelCommand}" />
+            </Grid>
+        </Grid>
+
+        <Border Grid.Column="1" Width="1" Margin="16,0"
+                Background="{DynamicResource DwBorder}" />
+
+        <!-- ══ Right: analysis preview ═══════════════════════════════════ -->
+        <Grid Grid.Column="2" RowDefinitions="Auto,*">
+
+            <StackPanel Grid.Row="0" Spacing="2" Margin="0,0,0,10">
+                <TextBlock Text="Analysis" Classes="h1" />
+                <TextBlock Classes="hint"
+                           Text="What the analyser made of the selected file, and why. Select a file on the left." />
+            </StackPanel>
+
+            <ScrollViewer Grid.Row="1">
+                <StackPanel Spacing="12">
+
+                    <TextBlock Classes="hint"
+                               Text="{Binding PreviewError}"
+                               IsVisible="{Binding PreviewError, Converter={x:Static ObjectConverters.IsNotNull}}"
+                               TextWrapping="Wrap" />
+
+                    <StackPanel Spacing="12" DataContext="{Binding Preview}"
+                                IsVisible="{Binding, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                x:DataType="vm:AnalysisPreview">
+
+                        <!-- Summary -->
+                        <Border Classes="card">
+                            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Encoding" Classes="hint" Margin="0,0,12,4" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Encoding}" Margin="0,0,0,4" TextWrapping="Wrap" />
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Separator" Classes="hint" Margin="0,0,12,4" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Separator}" Margin="0,0,0,4" TextWrapping="Wrap" />
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Header" Classes="hint" Margin="0,0,12,4" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Header}" Margin="0,0,0,4" TextWrapping="Wrap" />
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Structure" Classes="hint" Margin="0,0,12,0" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Structure}" TextWrapping="Wrap" />
+                            </Grid>
+                        </Border>
+
+                        <!-- Warnings -->
+                        <Border Classes="card" IsVisible="{Binding HasWarnings}">
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="Warnings" Classes="h2 warning" />
+                                <ItemsControl ItemsSource="{Binding Warnings}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="x:String">
+                                            <TextBlock Text="{Binding}" Classes="warning"
+                                                       TextWrapping="Wrap" Margin="0,0,0,4" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Columns -->
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Columns" Classes="h2" />
+                            <DataGrid ItemsSource="{Binding Columns}"
+                                      IsReadOnly="True"
+                                      MaxHeight="260"
+                                      AutoGenerateColumns="False">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="#" Binding="{Binding Index}" Width="40" />
+                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="1.4*" />
+                                    <DataGridTextColumn Header="Detected" Binding="{Binding DetectedType}" Width="Auto" />
+                                    <DataGridTextColumn Header="Used" Binding="{Binding EffectiveType}" Width="Auto" />
+                                    <DataGridTextColumn Header="Sample" Binding="{Binding Sample}" Width="1.2*" />
+                                    <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="1.6*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+
+                        <!-- Header signals -->
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Header signals" Classes="h2" />
+                            <TextBlock Classes="hint"
+                                       Text="Each signal is scored separately and combined using the weights on the Detection tab." />
+                            <DataGrid ItemsSource="{Binding HeaderSignals}"
+                                      IsReadOnly="True"
+                                      MaxHeight="180"
+                                      AutoGenerateColumns="False">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Signal" Binding="{Binding Name}" Width="Auto" />
+                                    <DataGridTextColumn Header="Score" Binding="{Binding Score}" Width="Auto" />
+                                    <DataGridTextColumn Header="Weight" Binding="{Binding Weight}" Width="Auto" />
+                                    <DataGridTextColumn Header="Reasoning" Binding="{Binding Detail}" Width="*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+
+                        <!-- Separator candidates -->
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Separator candidates" Classes="h2" />
+                            <DataGrid ItemsSource="{Binding SeparatorCandidates}"
+                                      IsReadOnly="True"
+                                      MaxHeight="170"
+                                      AutoGenerateColumns="False">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Separator" Binding="{Binding Separator}" Width="*" />
+                                    <DataGridTextColumn Header="Columns" Binding="{Binding Fields}" Width="Auto" />
+                                    <DataGridTextColumn Header="Consistency" Binding="{Binding Consistency}" Width="Auto" />
+                                    <DataGridCheckBoxColumn Header="Chosen" Binding="{Binding IsChosen}" Width="Auto" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+
+                        <!-- Row preview -->
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="First rows as parsed" Classes="h2" />
+                            <Border Classes="sunken">
+                                <ScrollViewer HorizontalScrollBarVisibility="Auto" MaxHeight="220">
+                                    <SelectableTextBlock Text="{Binding SampleText}" Classes="mono" />
+                                </ScrollViewer>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

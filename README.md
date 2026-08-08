@@ -1,374 +1,326 @@
 # DataWizards
 
-** CSV ↔ Excel conversion library for .NET**
+**CSV ↔ Excel conversion for .NET, with detection you can inspect and adjust.**
 
-DataWizard is a powerful C# library for intelligent CSV and Excel file handling with automatic data type detection, configurable field recognition, and robust encoding support.
-
-[![.NET](https://img.shields.io/badge/.NET-4.7.2-blue.svg)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/)
+[![Avalonia](https://img.shields.io/badge/UI-Avalonia%2012-purple.svg)](https://avaloniaui.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-## ✨ Features
-
-### Core Functionality
-- 📊 **Bi-directional Conversion**: CSV ↔ Excel (XLSX) with full data type preservation
-- 🔍 **Smart Type Detection**: Automatic recognition of integers, decimals, dates, and text
-- 🎯 **Header Recognition**: Configurable pattern matching with regex support
-- 🌍 **Multi-Encoding**: UTF-8, Windows-1252, ISO-8859-15, and custom encodings
-- 🔧 **Format Support**: Multiple separators (`;`, `,`, `\t`, `|`)
-
-### Advanced Features
-- ⚙️ **XML Configuration**: Centralized field type overrides and header patterns
-- 🔢 **Number Format Support**: Both English (`123.45`) and German (`123,45`) formats
-- 📝 **Quote Handling**: Automatic preservation of leading zeros and special characters
-- 📅 **Date Intelligence**: Prevents false date detection for numeric values
-- 📑 **Multi-Sheet Export**: Export all Excel worksheets to separate CSV files
-- 🎨 **Excel Styling**: Proper number formats, date formats, and text alignment
-
-## 🚀 Quick Start
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/DataWizard.git
-
-# Build the solution
-cd DataWizard
-dotnet build
-```
-
-### Basic Usage
-
-#### CSV to Excel
-
-```csharp
-using DataWizard;
-using libDataWizard;
-
-// Load CSV and convert to Excel
-CSV csv = new CSV();
-csv.Load(@"C:\data\input.csv");
-csv.WriteXLSX(@"C:\data\output.xlsx", overwrite: true);
-```
-
-#### Excel to CSV
-
-```csharp
-// Convert Excel to CSV
-XLS.ToCsv(@"C:\data\input.xlsx", @"C:\data\output.csv");
-
-// Export all worksheets
-List<string> files = XLS.ToCsv(@"C:\data\workbook.xlsx", 
-    @"C:\data\export.csv", 
-    exportAllSheets: true);
-```
-
-## 📖 Documentation
-
-### CSV Analysis
-
-DataWizard automatically detects:
-- **Separator** (`;`, `,`, `\t`, `|`) with confidence probability
-- **Encoding** (UTF-8, Windows-1252, etc.)
-- **Header row** based on configurable patterns
-- **Start line** (skips empty lines)
-- **Field count** consistency
-
-```csharp
-CSV csv = new CSV();
-csv.Load(@"data.csv");
-
-Console.WriteLine($"Separator: {csv.Separator}");
-Console.WriteLine($"Confidence: {csv.SeparatorProbability}%");
-Console.WriteLine($"Encoding: {csv.DetectedEncoding}");
-Console.WriteLine($"Header detected: {csv.DetectedHeaderLine}");
-```
-
-### Configuration System
-
-Create a `DataWizard.config.xml` to customize behavior:
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<DataWizardConfig>
-  <HeaderFieldNames>
-    <Pattern Name="^id$" IsRegex="true" />
-    <Pattern Name="name" IsRegex="false" />
-    <Pattern Name="preis" IsRegex="false" />
-    <Pattern Name="datum" IsRegex="false" />
-  </HeaderFieldNames>
-  
-  <DataTypeOverrides>
-    <Override FieldNamePattern="^.*id$" IsRegex="true" DataType="Text" />
-    <Override FieldNamePattern="plz" IsRegex="false" DataType="Text" />
-    <Override FieldNamePattern="preis" IsRegex="false" DataType="Decimal" />
-    <Override FieldNamePattern="menge" IsRegex="false" DataType="Integer" />
-    <Override FieldNamePattern="datum" IsRegex="false" DataType="Date" />
-  </DataTypeOverrides>
-</DataWizardConfig>
-```
-
-#### Data Types
-
-- `Auto`: Automatic detection (default)
-- `Text`: String values (preserves leading zeros: `001`, `01234`)
-- `Integer`: Whole numbers without decimals
-- `Decimal`: Numbers with decimal places
-- `Date`: Date values (ISO format: `yyyy-MM-dd`)
-
-### Advanced Options
-
-#### Custom Encoding
-
-```csharp
-// Excel to CSV with Windows-1252 encoding
-XLS.ToCsv(@"input.xlsx", @"output.csv", 
-    separator: ';',
-    encoding: Encoding.GetEncoding(1252));
-
-// CSV to Excel with custom separator detection
-CSV csv = new CSV();
-csv.Separators = new[] { ',', ';', '\t', '|' };
-csv.Load(@"data.csv");
-```
-
-#### Quote Control
-
-```csharp
-// All text fields with quotes
-XLS.ToCsv(@"input.xlsx", @"output.csv", quoteAllText: true);
-// Result: "Name";"City";"PLZ"
-
-// Minimal quotes (only when necessary)
-XLS.ToCsv(@"input.xlsx", @"output.csv", quoteAllText: false);
-// Result: Name;City;"01234"
-```
-
-#### Multi-Sheet Export
-
-```csharp
-// Export all worksheets to separate files
-List<string> files = XLS.ToCsv(
-    @"C:\data\workbook.xlsx", 
-    @"C:\output\data.csv",
-    exportAllSheets: true
-);
-
-// Results:
-// - C:\output\data_Sheet1.csv
-// - C:\output\data_Kunden.csv
-// - C:\output\data_Produkte.csv
-
-foreach (string file in files)
-{
-    Console.WriteLine($"Created: {file}");
-}
-```
-
-## 🎯 Use Cases
-
-### 1. Preserve Leading Zeros
-
-```csv
-ID;PLZ;Telefon
-"001";"01234";"+49 176 12345678"
-```
-
-Using quotes or field type override ensures values keep their format.
-
-### 2. German Number Format
-
-```csv
-Artikel;Preis;Menge
-Widget;19,99;5
-Gadget;123,45;10
-```
-
-Automatic detection of German format (`19,99`) and English format (`19.99`).
-
-### 3. Date Handling
-
-```csv
-Datum;Beschreibung
-2025-01-31;Bestellung
-31.01.2025;Lieferung
-```
-
-Intelligent date detection prevents false positives (e.g., `45.66` is NOT a date).
-
-### 4. Batch Processing
-
-```csharp
-// Convert all CSVs in a folder
-foreach (string csvFile in Directory.GetFiles(@"C:\input", "*.csv"))
-{
-    CSV csv = new CSV();
-    csv.Load(csvFile);
-    
-    string xlsxFile = Path.ChangeExtension(csvFile, ".xlsx");
-    csv.WriteXLSX(xlsxFile, overwrite: true);
-}
-```
-
-## 🏗️ Architecture
-
-```
-DataWizard/
-├── DataWizard/              # Main library (CSV handling)
-│   └── CSV.cs              # CSV parser and analyzer
-├── libDataWizard/          # Helper library (Excel handling)
-│   ├── XLS.cs              # Excel read/write operations
-│   └── DataWizardConfig.cs # Configuration system
-└── test/                   # Test project
-    └── Program.cs          # Usage examples
-```
-
-## 🔧 Technical Details
-
-### Dependencies
-
-- **.NET Framework 4.7.2**
-- **DocumentFormat.OpenXml 3.3.0** - Excel file handling
-- **UTF.Unknown 2.5.1** - Encoding detection
-
-### Supported Formats
-
-#### CSV
-- **Separators**: `;` `,` `\t` `|`
-- **Encodings**: UTF-8, UTF-16, Windows-1252, ISO-8859-1, ISO-8859-15
-- **Line Endings**: CRLF, LF
-- **Quotes**: RFC 4180 compliant
-
-#### Excel
-- **Format**: XLSX (Office Open XML)
-- **Versions**: Excel 2007 and later
-- **Features**: Multiple worksheets, cell formatting, data types
-
-### Data Type Detection
-
-**Priority Order:**
-1. **Quoted fields** (`"001"`) → Always treated as text
-2. **Config overrides** → Forced type from XML configuration
-3. **Number detection** → English (`123.45`) and German (`123,45`) formats
-4. **Date detection** → Only with valid separators (`-`, `/`, `.`)
-5. **Fallback** → Text
-
-### Number Format Heuristics
-
-To prevent false date detection:
-- Numbers < 100 (e.g., `6`, `45.66`) → **Never** treated as dates
-- Numbers ≥ 100 → Treated as numbers unless explicitly date-formatted
-- Date format required: Must have separators and valid date structure
-
-## 🛣️ Roadmap
-
-### Upcoming Features
-
-- ✅ **Core Library** (Current)
-- 🔜 **Windows UI Application**
-  - Drag & drop conversion
-  - Visual configuration editor
-  - Batch processing
-  - Preview before conversion
-  
-- 🔜 **File Watcher Service**
-  - Monitor input folder
-  - Automatic conversion
-  - Configurable rules per folder
-  - Error logging and retry
-
-## 📚 Examples
-
-### Example 1: Import with Custom Config
-
-```csharp
-// Load configuration
-CSV csv = new CSV(@"C:\config\DataWizard.config.xml");
-
-// Analyze and convert
-csv.Load(@"C:\data\customers.csv");
-csv.WriteXLSX(@"C:\data\customers.xlsx", overwrite: true);
-```
-
-### Example 2: Export with Options
-
-```csharp
-// Export with specific settings
-XLS.ToCsv(
-    xlsxPath: @"C:\data\report.xlsx",
-    csvPath: @"C:\data\report.csv",
-    separator: ',',
-    encoding: Encoding.UTF8,
-    quoteAllText: false,
-    worksheetIndex: 0,
-    exportAllSheets: false
-);
-```
-
-### Example 3: Roundtrip Conversion
-
-```csharp
-// CSV → Excel → CSV (data integrity test)
-CSV csv1 = new CSV();
-csv1.Load(@"original.csv");
-csv1.WriteXLSX(@"temp.xlsx", true);
-
-XLS.ToCsv(@"temp.xlsx", @"roundtrip.csv");
-
-// Compare original.csv with roundtrip.csv
-```
-
-## 🐛 Troubleshooting
-
-### Problem: Leading zeros removed
-
-**Solution:** Use quotes in CSV or configure field as `Text` type
-```xml
-<Override FieldNamePattern="id" DataType="Text" />
-```
-
-### Problem: German numbers not recognized
-
-**Solution:** Library automatically detects both formats. Ensure no thousands separators in input.
-
-### Problem: False date detection
-
-**Solution:** 
-- Ensure StyleIndex is set when writing Excel
-- Numbers < 100 are never treated as dates
-- Use explicit date format (`yyyy-MM-dd`)
-
-### Problem: Encoding issues (Umlaute)
-
-**Solution:** Specify correct encoding
-```csharp
-XLS.ToCsv(@"input.xlsx", @"output.csv", 
-    encoding: Encoding.GetEncoding(1252)); // Windows-1252
-```
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📧 Contact
-
-Project Link: [https://github.com/Felteshobbies/DataWizard](https://github.com/Felteshobbies/DataWizard)
-
-## 🙏 Acknowledgments
-
-- [DocumentFormat.OpenXml](https://github.com/OfficeDev/Open-XML-SDK) - Excel file manipulation
-- [UTF.Unknown](https://github.com/CharsetDetector/UTF-unknown) - Encoding detection
+DataWizards converts delimited text files to Excel workbooks and back. The
+difficult part of that job is not writing the file — it is working out how to read
+the one you were given: which encoding, which separator, whether the first row
+names the columns, and whether `00123` is a number or an article code.
+
+DataWizards makes every one of those decisions visible, explains the evidence
+behind it, and lets you change the rules.
 
 ---
 
-**Note:** This is a library component. GUI application and file watcher service are planned for future releases.
+## Contents
+
+- [Application](#application)
+- [What the analysis panel tells you](#what-the-analysis-panel-tells-you)
+- [Detection settings](#detection-settings)
+- [Folder watcher](#folder-watcher)
+- [Library use](#library-use)
+- [Building](#building)
+- [Project layout](#project-layout)
+- [Troubleshooting](#troubleshooting)
+
+---
+
+## Application
+
+Drop files onto the **Convert** tab, or drop a folder to queue everything
+convertible inside it. The direction comes from the extension:
+
+| Extension | Direction |
+|---|---|
+| `.csv` `.txt` `.log` `.tsv` `.dat` | text → Excel workbook |
+| `.xlsx` `.xlsm` | workbook → delimited text |
+
+The interface has a light and a dark theme, selectable in the header or left on
+**System** to follow the operating system.
+
+Settings live in `%APPDATA%\DataWizards\settings.json`. They are saved when you
+press **Save settings** and again when the application closes. The file is plain
+JSON — readable, editable, and safe to copy between machines; values outside a
+sensible range are clamped on load.
+
+---
+
+## What the analysis panel tells you
+
+Select a text file on the Convert tab and the panel reports how it was read:
+
+**Separator candidates** — every candidate character, scored by how consistently
+it produces the same number of columns. The winner is the *most consistent*
+candidate, not the most frequent. That distinction matters: a single description
+column full of commas contains far more commas than the file has semicolons, and
+frequency-based detection picks the wrong one every time.
+
+**Header signals** — the four independent checks behind the header decision, each
+with its score and its reasoning, so you can see which one disagreed.
+
+**Columns** — the type detected from the values, the type actually used, and the
+rule that overrode it if one did.
+
+**Rows as parsed** — the first rows in aligned columns. A value that has slipped
+into the wrong column is obvious at a glance.
+
+Warnings appear here too: an unclosed quote, rows with differing field counts, a
+separator that only explains part of the file, an encoding guess that was not
+confident.
+
+---
+
+## Detection settings
+
+Everything below is configurable on the **Detection** tab, and every change is
+applied immediately to a sample you can paste in beside it.
+
+### Encoding
+
+Detected from the file, or forced. A byte order mark wins by default. When
+detection falls below the confidence threshold the configured fallback is used and
+the analysis says so rather than silently producing mojibake.
+
+### Separator
+
+Candidate characters, an optional forced separator, the quote character, how many
+rows to analyse, and the consistency threshold below which the file is flagged.
+
+### Header detection
+
+In **Auto** mode four signals are scored from 0 to 1, combined using configurable
+weights, and compared against a threshold:
+
+| Signal | What it measures | Default weight |
+|---|---|---|
+| Known field names | how many first-row values match the pattern list | 1.0 |
+| Type divergence | columns holding text on row 1 and numbers or dates below | 1.5 |
+| Unique values | column names are normally distinct | 0.5 |
+| No empty cells | header rows rarely have gaps | 0.5 |
+
+Type divergence carries the highest weight because it is the most reliable signal
+for machine-generated exports, and it works even when the column names are ones
+DataWizards has never seen.
+
+Set the mode to **Always** or **Never** to skip scoring entirely. Use *skip
+leading lines* for files that begin with a banner or comment block.
+
+### Value types
+
+The defaults are chosen to protect identifiers:
+
+- **Leading zeros** — `00123` and `01067` stay text. Turning them into numbers
+  drops the zeros, which is what mangles article numbers and postal codes.
+- **Long digit runs** — anything past the digit limit (15 by default) stays text.
+  Excel stores numbers as doubles, so beyond roughly fifteen digits the value
+  silently changes. That is what rounds EAN codes and IBANs into nonsense.
+- **Quoted values** — a value the source wrote in quotes is text, because the
+  quotes are the author stating that the characters matter.
+- **Dates** — parsed only against the configured format list, never against the
+  machine's regional settings, so the same file reads identically everywhere.
+- **Numbers** — Auto accepts `1234.56` first and then the configured culture, so
+  `19.99` and `19,99` both work. Thousands separators are off by default because
+  they make `1.234` ambiguous between one thousand and a decimal.
+
+### Data type rules
+
+A rule forces a column to a type regardless of what its values look like. Rules
+match on the column name — *Contains*, *Exact*, *StartsWith*, *EndsWith* or
+*Regex* — or on a column position for files without a header. The first match
+wins, and a positional rule beats a name rule. An invalid regular expression never
+matches rather than throwing, so one broken rule cannot stop a batch.
+
+Pattern lists from a version before 0.2 can be brought across with **Import legacy
+XML**, which reads the old `DataWizard.config.xml`.
+
+---
+
+## Folder watcher
+
+Each rule watches a folder and converts what appears in it.
+
+- Files are converted **one at a time**. They arrive in bursts, and converting a
+  folder's worth in parallel only makes the disk thrash.
+- A file is only converted once it has **stopped changing** for the settle delay.
+  Large files arrive in pieces, and reading one mid-copy produces truncated data.
+- Failures are **retried**, then optionally moved to an error folder.
+- Sources can be kept, moved to a processed folder, or deleted after conversion.
+- Results written by the watcher are **ignored for two minutes**, so a rule cannot
+  feed on its own output. Watching both directions with the output in the watched
+  folder is flagged as a warning — a separate output folder is safer.
+
+---
+
+## Library use
+
+`DataWizard.Core` has no UI dependency and can be referenced on its own.
+
+```csharp
+using DataWizard.Core.Configuration;
+using DataWizard.Core.Conversion;
+
+var settings = DataWizardSettings.CreateDefault();
+settings.Conversion.Overwrite = true;
+
+var service = new ConversionService(settings);
+service.Log += (_, entry) => Console.WriteLine(entry);
+
+var result = service.Convert(@"C:\data\customers.csv");
+
+if (result.Success)
+    Console.WriteLine($"Wrote {result.OutputPaths[0]} ({result.RowCount} rows)");
+else
+    Console.WriteLine($"Failed: {result.ErrorMessage}");
+```
+
+### Inspecting a file without converting it
+
+```csharp
+using DataWizard.Core.Csv;
+
+var analysis = new CsvAnalyzer(settings.Detection).Analyze(@"C:\data\customers.csv");
+
+Console.WriteLine($"Separator: {analysis.Separator} ({analysis.SeparatorConfidence:P0})");
+Console.WriteLine($"Header: {analysis.HeaderResult.Describe()}");
+
+foreach (var column in analysis.Columns)
+    Console.WriteLine($"  {column.Describe()}");
+
+foreach (var warning in analysis.Warnings)
+    Console.WriteLine($"  warning: {warning}");
+```
+
+### Forcing a column to a type
+
+```csharp
+settings.Detection.FieldRules.Insert(0, new FieldRule
+{
+    Pattern = "^article_no$",
+    Match = MatchMode.Regex,
+    DataType = FieldDataType.Text
+});
+```
+
+### Watching a folder
+
+```csharp
+using DataWizard.Core.Watching;
+
+var watcher = new FolderWatchService(service);
+watcher.FileConverted += (_, r) => Console.WriteLine(r.Describe());
+
+watcher.Start(new WatcherSettings
+{
+    Rules =
+    [
+        new WatchRule
+        {
+            Name = "Incoming orders",
+            InputFolder = @"C:\incoming",
+            OutputFolder = @"C:\processed",
+            FilePatterns = "*.csv",
+            SourceAction = SourceFileAction.Move,
+            ProcessedFolder = @"C:\archive"
+        }
+    ]
+});
+```
+
+---
+
+## Building
+
+Requires the **.NET 10 SDK**. No other prerequisites — everything else restores
+from NuGet.
+
+```bash
+git clone https://github.com/Felteshobbies/DataWizards.git
+cd DataWizards
+
+dotnet build
+dotnet test
+dotnet run --project src/DataWizard.App
+```
+
+---
+
+## Project layout
+
+```
+DataWizards/
+├── src/
+│   ├── DataWizard.Core/          Conversion engine, no UI dependency
+│   │   ├── Configuration/        Settings, patterns, rules, persistence
+│   │   ├── Csv/                  RFC 4180 reader, encoding, separator,
+│   │   │                         header and value type detection
+│   │   ├── Excel/                Streaming XLSX reader and writer
+│   │   ├── Conversion/           Orchestration and logging
+│   │   └── Watching/             Folder monitoring
+│   └── DataWizard.App/           Avalonia desktop application
+│       ├── Services/             Session, dialogs
+│       ├── ViewModels/
+│       ├── Views/
+│       └── Styles/               Light and dark colour tokens
+├── tests/
+│   ├── DataWizard.Core.Tests/    Engine tests
+│   └── DataWizard.App.Tests/     Headless UI smoke tests
+└── samples/                      Files exercising the awkward cases
+```
+
+### Dependencies
+
+| Package | Used for |
+|---|---|
+| DocumentFormat.OpenXml 3.5 | reading and writing XLSX |
+| UTF.Unknown 2.6 | encoding detection |
+| Avalonia 12.1 | desktop UI |
+| CommunityToolkit.Mvvm 8.4 | view model plumbing |
+
+---
+
+## Troubleshooting
+
+**Accented characters come out wrong.** Detection was not confident enough and the
+fallback was used; the analysis panel says so. Set the encoding explicitly —
+`windows-1252` for files from older Windows software.
+
+**Everything lands in one column.** No candidate separator fitted. Check the
+separator candidate table; if the file uses something unusual, add that character
+to the candidate list or force it.
+
+**The first row was treated as data, or the other way round.** Look at the header
+signals to see which check disagreed, then adjust that signal's weight, move the
+threshold, or set the mode to Always or Never.
+
+**Leading zeros disappeared.** Check that *keep leading zeros as text* is on. If
+the column mixes values with and without zeros, add a rule forcing it to Text.
+
+**Excel opens the CSV as gibberish.** Excel needs a byte order mark to recognise a
+UTF-8 CSV on double-click. Turn on *write a byte order mark* on the Output tab, or
+switch the output encoding to `windows-1252`.
+
+**Decimals were rounded.** The *max. decimals* setting rounds the value. Leave it
+at 15 to keep everything a number can carry.
+
+The **Log** tab records every decision per file. Turn on *Details* to see the full
+analysis of each conversion.
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+## Contributing
+
+Pull requests are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Acknowledgements
+
+- [DocumentFormat.OpenXml](https://github.com/OfficeDev/Open-XML-SDK)
+- [UTF.Unknown](https://github.com/CharsetDetector/UTF-unknown)
+- [Avalonia](https://github.com/AvaloniaUI/Avalonia)

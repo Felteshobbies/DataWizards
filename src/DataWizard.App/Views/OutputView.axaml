@@ -1,0 +1,158 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:DataWizard.App.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="620"
+             x:Class="DataWizard.App.Views.OutputView"
+             x:DataType="vm:OutputViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.opt">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,10,0" />
+            <Setter Property="Foreground" Value="{DynamicResource DwText}" />
+        </Style>
+        <Style Selector="Border.group">
+            <Setter Property="Background" Value="{DynamicResource DwSurfaceAlt}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource DwBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="14" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer Margin="16">
+        <StackPanel MaxWidth="1000" HorizontalAlignment="Left">
+
+            <StackPanel Spacing="2" Margin="0,0,0,12">
+                <TextBlock Text="Output" Classes="h1" />
+                <TextBlock Classes="hint"
+                           Text="How results are written. These options do not affect how source files are read; that is the Detection tab." />
+            </StackPanel>
+
+            <!-- ── Files ─────────────────────────────────────────────────── -->
+            <Border Classes="group">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Files" Classes="h2" />
+
+                    <Grid ColumnDefinitions="170,*,Auto,Auto">
+                        <TextBlock Grid.Column="0" Text="Output folder" Classes="opt" />
+                        <TextBox Grid.Column="1" Text="{Binding OutputFolder}"
+                                 PlaceholderText="(same folder as the source file)" />
+                        <Button Grid.Column="2" Content="Browse" Margin="6,0,0,0"
+                                Command="{Binding BrowseOutputFolderCommand}" />
+                        <Button Grid.Column="3" Content="Clear" Margin="6,0,0,0"
+                                Command="{Binding ClearOutputFolderCommand}" />
+                    </Grid>
+
+                    <CheckBox Content="Overwrite existing files"
+                              IsChecked="{Binding Overwrite}"
+                              ToolTip.Tip="When off, a numeric suffix is appended instead of replacing the file." />
+                </StackPanel>
+            </Border>
+
+            <Grid ColumnDefinitions="*,16,*">
+
+                <!-- ── CSV output ────────────────────────────────────────── -->
+                <Border Grid.Column="0" Classes="group" VerticalAlignment="Top">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Excel to CSV" Classes="h2" />
+                        <TextBlock Classes="hint" Text="Applied when a workbook is converted to text." />
+
+                        <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Separator" Classes="opt" />
+                            <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,0,0,6" HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding SeparatorOptions}"
+                                      SelectedItem="{Binding CsvSeparator}" />
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Encoding" Classes="opt" />
+                            <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,0,0,6" HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding EncodingOptions}"
+                                      SelectedItem="{Binding CsvEncoding}" />
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Quoting" Classes="opt" />
+                            <ComboBox Grid.Row="2" Grid.Column="1" Margin="0,0,0,6" HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding QuoteModes}"
+                                      SelectedItem="{Binding QuoteMode}"
+                                      ToolTip.Tip="Minimal quotes only where needed; TextFields also quotes text; All quotes everything." />
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Line ending" Classes="opt" />
+                            <ComboBox Grid.Row="3" Grid.Column="1" Margin="0,0,0,6" HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding LineEndings}"
+                                      SelectedItem="{Binding LineEnding}" />
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Number culture" Classes="opt" />
+                            <ComboBox Grid.Row="4" Grid.Column="1" Margin="0,0,0,6" HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding NumberCultureOptions}"
+                                      SelectedItem="{Binding NumberOutputCulture}"
+                                      ToolTip.Tip="Empty means 1234.56; de-DE produces 1234,56." />
+
+                            <TextBlock Grid.Row="5" Grid.Column="0" Text="Date format" Classes="opt" />
+                            <TextBox Grid.Row="5" Grid.Column="1" Margin="0,0,0,6"
+                                     Text="{Binding DateOutputFormat}" />
+
+                            <TextBlock Grid.Row="6" Grid.Column="0" Text="Max. decimals" Classes="opt" />
+                            <NumericUpDown Grid.Row="6" Grid.Column="1" Margin="0,0,0,6"
+                                           Minimum="0" Maximum="15" Increment="1" FormatString="0"
+                                           Value="{Binding MaxDecimalPlaces}"
+                                           ToolTip.Tip="15 keeps the value as stored. Lowering this rounds and therefore loses data." />
+
+                            <TextBlock Grid.Row="7" Grid.Column="0" Text="Worksheet index" Classes="opt" />
+                            <NumericUpDown Grid.Row="7" Grid.Column="1"
+                                           Minimum="0" Maximum="999" Increment="1" FormatString="0"
+                                           Value="{Binding WorksheetIndex}"
+                                           IsEnabled="{Binding !ExportAllSheets}" />
+                        </Grid>
+
+                        <CheckBox Content="Write a byte order mark"
+                                  IsChecked="{Binding WriteByteOrderMark}"
+                                  ToolTip.Tip="Excel needs one to open a UTF-8 CSV correctly by double-click. Import scripts usually prefer none." />
+                        <CheckBox Content="Export every worksheet to its own file"
+                                  IsChecked="{Binding ExportAllSheets}" />
+                        <CheckBox Content="Keep empty worksheet rows as blank lines"
+                                  IsChecked="{Binding KeepEmptyRows}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Excel output ──────────────────────────────────────── -->
+                <Border Grid.Column="2" Classes="group" VerticalAlignment="Top">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="CSV to Excel" Classes="h2" />
+                        <TextBlock Classes="hint" Text="Applied when a text file becomes a workbook." />
+
+                        <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Worksheet name" Classes="opt" />
+                            <TextBox Grid.Row="0" Grid.Column="1" Margin="0,0,0,6"
+                                     Text="{Binding SheetName}" />
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Date format" Classes="opt" />
+                            <TextBox Grid.Row="1" Grid.Column="1" Margin="0,0,0,6"
+                                     Text="{Binding DateNumberFormat}"
+                                     ToolTip.Tip="An Excel number format code, for example yyyy\-mm\-dd." />
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Decimal format" Classes="opt" />
+                            <TextBox Grid.Row="2" Grid.Column="1" Margin="0,0,0,6"
+                                     Text="{Binding DecimalNumberFormat}" />
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Integer format" Classes="opt" />
+                            <TextBox Grid.Row="3" Grid.Column="1"
+                                     Text="{Binding IntegerNumberFormat}" />
+                        </Grid>
+
+                        <Separator />
+
+                        <CheckBox Content="Bold header row" IsChecked="{Binding BoldHeaderRow}" />
+                        <CheckBox Content="Freeze header row" IsChecked="{Binding FreezeHeaderRow}" />
+                        <CheckBox Content="Add an auto-filter to the header row"
+                                  IsChecked="{Binding AutoFilterHeaderRow}" />
+                        <CheckBox Content="Size columns to their content"
+                                  IsChecked="{Binding AutoFitColumns}"
+                                  ToolTip.Tip="Widths are estimated from the analysed sample rather than the whole file." />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

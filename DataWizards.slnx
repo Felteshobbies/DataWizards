@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DataWizard.App/DataWizard.App.csproj" />
+    <Project Path="src/DataWizard.Core/DataWizard.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DataWizard.App.Tests/DataWizard.App.Tests.csproj" />
+    <Project Path="tests/DataWizard.Core.Tests/DataWizard.Core.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,161 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="620"
+             x:Class="DataWizard.App.Views.HelpView">
+
+    <!--
+      Rendered natively rather than in an embedded browser. The previous version
+      loaded an HTML file into the legacy WebBrowser control, which runs in an
+      Internet Explorer compatibility mode and mangled the stylesheet.
+    -->
+    <UserControl.Styles>
+        <Style Selector="TextBlock.body">
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{DynamicResource DwText}" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+        </Style>
+        <Style Selector="TextBlock.section">
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource DwText}" />
+            <Setter Property="Margin" Value="0,18,0,8" />
+        </Style>
+        <Style Selector="TextBlock.item">
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Foreground" Value="{DynamicResource DwTextMuted}" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+        <Style Selector="Border.code">
+            <Setter Property="Background" Value="{DynamicResource DwCodeBackground}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource DwBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="12" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer Margin="16">
+        <StackPanel MaxWidth="860" HorizontalAlignment="Left">
+
+            <TextBlock Text="How DataWizards works" Classes="h1" />
+            <TextBlock Classes="hint" Margin="0,2,0,0"
+                       Text="Converts delimited text files to Excel workbooks and back, deciding how to read each file rather than assuming a fixed layout." />
+
+            <!-- ══ Getting started ══ -->
+            <TextBlock Text="Getting started" Classes="section" />
+            <TextBlock Classes="body"
+                       Text="Drop files onto the Convert tab, or click the drop zone to browse. Dropping a folder queues the convertible files inside it. The direction is chosen from the extension:" />
+            <TextBlock Classes="item"
+                       Text="  .csv .txt .log .tsv .dat  become an Excel workbook" />
+            <TextBlock Classes="item"
+                       Text="  .xlsx .xlsm  become delimited text" />
+            <TextBlock Classes="body"
+                       Text="Results are written next to the source file unless an output folder is set. With overwrite off, a numeric suffix is added instead of replacing anything." />
+
+            <!-- ══ Analysis ══ -->
+            <TextBlock Text="Reading the analysis panel" Classes="section" />
+            <TextBlock Classes="body"
+                       Text="Selecting a text file on the Convert tab shows what the analyser made of it, and why. This is the place to look when a file does not convert the way you expected." />
+            <TextBlock Classes="item"
+                       Text="  Separator candidates - every candidate character scored by how consistently it produces the same number of columns. The winner is the most consistent one, not the most frequent, so a description column full of commas cannot outvote the real separator." />
+            <TextBlock Classes="item"
+                       Text="  Header signals - the four independent checks behind the header decision, each with its score and the reasoning. Adjust their weights on the Detection tab." />
+            <TextBlock Classes="item"
+                       Text="  Columns - the type detected from the values, the type actually used, and the rule that changed it if one did." />
+            <TextBlock Classes="item"
+                       Text="  Rows as parsed - the first rows laid out in aligned columns. A value that has slipped into the wrong column is obvious here." />
+
+            <!-- ══ Header detection ══ -->
+            <TextBlock Text="Header detection" Classes="section" />
+            <TextBlock Classes="body"
+                       Text="In Auto mode four signals are scored between 0 and 1, combined using their weights, and compared against the threshold:" />
+            <TextBlock Classes="item"
+                       Text="  Known field names - how many of the first row's values match the pattern list. Add your own patterns for column names specific to your systems." />
+            <TextBlock Classes="item"
+                       Text="  Type divergence - columns that hold text on the first row and numbers or dates below it. The most reliable signal for exports from other software, which is why it carries the highest default weight." />
+            <TextBlock Classes="item"
+                       Text="  Unique values - column names are normally distinct from one another." />
+            <TextBlock Classes="item"
+                       Text="  No empty cells - a header row rarely has gaps." />
+            <TextBlock Classes="body"
+                       Text="Set the mode to Always or Never to skip the scoring entirely. Use 'Skip leading lines' for files that start with a banner or comment block." />
+
+            <!-- ══ Value types ══ -->
+            <TextBlock Text="Value types" Classes="section" />
+            <TextBlock Classes="body"
+                       Text="Excel needs to know whether a value is text, a number or a date, and getting it wrong destroys data. The defaults are chosen to protect identifiers:" />
+            <TextBlock Classes="item"
+                       Text="  Leading zeros - 00123 and 01067 stay text. Turning them into numbers would drop the zeros, which is what mangles article numbers and postal codes." />
+            <TextBlock Classes="item"
+                       Text="  Long digit runs - anything longer than the digit limit stays text. Excel stores numbers as doubles, so beyond roughly fifteen digits the value silently changes. That is what rounds EAN codes and IBANs into nonsense." />
+            <TextBlock Classes="item"
+                       Text="  Quoted values - a value the source wrote in quotes is text, because the quotes are the author saying the characters matter." />
+            <TextBlock Classes="item"
+                       Text="  Dates - parsed only against the format list, never against the machine's regional settings. The same file therefore reads identically on every machine." />
+            <TextBlock Classes="item"
+                       Text="  Numbers - Auto mode accepts 1234.56 first and then the configured culture, so 19.99 and 19,99 both work. Thousands separators are off by default because they make 1.234 ambiguous between one thousand and a decimal." />
+
+            <!-- ══ Field rules ══ -->
+            <TextBlock Text="Data type rules" Classes="section" />
+            <TextBlock Classes="body"
+                       Text="A rule forces a column to a type regardless of what its values look like. Rules are matched against the column name, or against a column position for files without a header, and the first match wins. A rule naming a position beats one matching a name." />
+            <TextBlock Classes="body"
+                       Text="Match modes are Contains, Exact, StartsWith, EndsWith and Regex. An invalid regular expression never matches rather than failing the conversion, so one broken rule cannot stop a batch." />
+
+            <!-- ══ Watcher ══ -->
+            <TextBlock Text="Folder watcher" Classes="section" />
+            <TextBlock Classes="body"
+                       Text="Each rule watches a folder and converts what lands in it. Files are converted one at a time, and only once they have stopped changing for the settle delay - a large file arrives in pieces, and reading one mid-copy produces truncated data." />
+            <TextBlock Classes="item"
+                       Text="  Source file - keep it, move it to a processed folder, or delete it once converted." />
+            <TextBlock Classes="item"
+                       Text="  Error folder - where a file goes after its retries are used up. Leave empty to leave it in place." />
+            <TextBlock Classes="item"
+                       Text="  Results written by the watcher are ignored for two minutes, so a rule cannot feed on its own output. Watching both directions with the output in the watched folder is flagged as a warning; a separate output folder is safer." />
+
+            <!-- ══ Settings ══ -->
+            <TextBlock Text="Settings" Classes="section" />
+            <TextBlock Classes="body"
+                       Text="Settings are stored as JSON and saved when you press Save settings and again when the application closes. The file is readable and can be edited or copied between machines; values outside a sensible range are clamped on load, so a hand-edited file cannot put the engine into an impossible state." />
+            <Border Classes="code">
+                <SelectableTextBlock Classes="mono"
+                                     Text="%APPDATA%\DataWizards\settings.json" />
+            </Border>
+            <TextBlock Classes="body"
+                       Text="Pattern lists from a version before 0.2 can be brought over with 'Import legacy XML' on the Detection tab, which reads the old DataWizard.config.xml." />
+
+            <!-- ══ Troubleshooting ══ -->
+            <TextBlock Text="Troubleshooting" Classes="section" />
+
+            <TextBlock Classes="h2" Text="Accented characters come out wrong" />
+            <TextBlock Classes="body"
+                       Text="Detection was not confident enough and the fallback encoding was used; the analysis panel says so. Set the encoding explicitly on the Detection tab - windows-1252 for files exported by older Windows software." />
+
+            <TextBlock Classes="h2" Text="Everything lands in one column" />
+            <TextBlock Classes="body"
+                       Text="No candidate separator fitted. Check the separator candidate list in the analysis panel; if the file uses something unusual, add that character to the candidates or force it." />
+
+            <TextBlock Classes="h2" Text="The first row was treated as data, or the other way round" />
+            <TextBlock Classes="body"
+                       Text="Look at the header signals to see which check disagreed, then either lower the threshold, adjust that signal's weight, or set the mode to Always or Never." />
+
+            <TextBlock Classes="h2" Text="Leading zeros disappeared" />
+            <TextBlock Classes="body"
+                       Text="Check that 'Keep leading zeros as text' is on. If the column mixes values with and without zeros, add a rule forcing it to Text." />
+
+            <TextBlock Classes="h2" Text="Excel opens the CSV as gibberish" />
+            <TextBlock Classes="body"
+                       Text="Excel needs a byte order mark to recognise a UTF-8 CSV on double-click. Turn on 'Write a byte order mark' on the Output tab, or switch the output encoding to windows-1252." />
+
+            <TextBlock Classes="h2" Text="Decimals were rounded" />
+            <TextBlock Classes="body"
+                       Text="The 'Max. decimals' setting on the Output tab rounds the value. Leave it at 15 to keep everything the number carries." />
+
+            <TextBlock Classes="body" Margin="0,20,0,0"
+                       Text="The Log tab records every decision made per file. Turn on 'Details' there to see the full analysis of each conversion." />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

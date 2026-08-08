@@ -1,0 +1,190 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:DataWizard.App.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="620"
+             x:Class="DataWizard.App.Views.WatcherView"
+             x:DataType="vm:WatcherViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.opt">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,10,0" />
+            <Setter Property="Foreground" Value="{DynamicResource DwText}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*" Margin="16">
+
+        <!-- ── Header bar ─────────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Classes="card" Margin="0,0,0,12">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Spacing="2">
+                    <TextBlock Text="Folder watcher" Classes="h1" />
+                    <TextBlock Classes="hint"
+                               Text="Each rule watches a folder and converts what appears in it. A file is only converted once it has stopped changing, so a file still being copied is never read half-written." />
+                    <TextBlock Text="{Binding StatusText}" Margin="0,4,0,0" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"
+                            VerticalAlignment="Center">
+                    <CheckBox Content="Start with the application"
+                              IsChecked="{Binding AutoStart}"
+                              VerticalAlignment="Center" />
+                    <Button Classes="primary" Content="Start" Command="{Binding StartCommand}" />
+                    <Button Content="Stop" Padding="18,10" Command="{Binding StopCommand}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" ColumnDefinitions="290,Auto,*">
+
+            <!-- ── Rule list ─────────────────────────────────────────────── -->
+            <Grid Grid.Column="0" RowDefinitions="*,Auto">
+                <Border Grid.Row="0" Classes="card" Padding="0">
+                    <ListBox ItemsSource="{Binding Rules}"
+                             SelectedItem="{Binding SelectedRule}"
+                             Background="Transparent" BorderThickness="0">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:WatchRuleRow">
+                                <StackPanel Spacing="2" Margin="0,3">
+                                    <Grid ColumnDefinitions="Auto,*">
+                                        <CheckBox Grid.Column="0" IsChecked="{Binding Enabled}"
+                                                  Margin="0,0,6,0" />
+                                        <TextBlock Grid.Column="1" Text="{Binding DisplayName}"
+                                                   FontWeight="Medium" VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </Grid>
+                                    <TextBlock Text="{Binding InputFolder}" Classes="hint"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding Status}" Classes="hint"
+                                               IsVisible="{Binding Status, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                               TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
+                    <Button Content="Add" Command="{Binding AddRuleCommand}"
+                            IsEnabled="{Binding CanEditRules}" />
+                    <Button Content="Duplicate" Command="{Binding DuplicateRuleCommand}"
+                            IsEnabled="{Binding CanEditRules}" />
+                    <Button Content="Remove" Command="{Binding RemoveRuleCommand}"
+                            IsEnabled="{Binding CanEditRules}" />
+                </StackPanel>
+            </Grid>
+
+            <Border Grid.Column="1" Width="1" Margin="16,0"
+                    Background="{DynamicResource DwBorder}" />
+
+            <!-- ── Rule editor ───────────────────────────────────────────── -->
+            <ScrollViewer Grid.Column="2">
+                <StackPanel>
+
+                    <TextBlock Classes="hint" Margin="0,20,0,0"
+                               HorizontalAlignment="Center"
+                               Text="Select a rule on the left, or add one."
+                               IsVisible="{Binding SelectedRule, Converter={x:Static ObjectConverters.IsNull}}" />
+
+                    <StackPanel Spacing="12" DataContext="{Binding SelectedRule}"
+                                IsVisible="{Binding, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                x:DataType="vm:WatchRuleRow">
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Folders" Classes="h2" />
+
+                                <Grid ColumnDefinitions="150,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Rule name" Classes="opt" />
+                                    <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,6"
+                                             Text="{Binding Name}" />
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Watch folder" Classes="opt" />
+                                    <TextBox Grid.Row="1" Grid.Column="1" Margin="0,0,0,6"
+                                             Text="{Binding InputFolder}" />
+                                    <Button Grid.Row="1" Grid.Column="2" Content="Browse" Margin="6,0,0,6"
+                                            Command="{Binding $parent[UserControl].((vm:WatcherViewModel)DataContext).BrowseInputFolderCommand}" />
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Output folder" Classes="opt" />
+                                    <TextBox Grid.Row="2" Grid.Column="1" Margin="0,0,0,6"
+                                             Text="{Binding OutputFolder}"
+                                             PlaceholderText="(same folder as the source file)" />
+                                    <Button Grid.Row="2" Grid.Column="2" Content="Browse" Margin="6,0,0,6"
+                                            Command="{Binding $parent[UserControl].((vm:WatcherViewModel)DataContext).BrowseOutputFolderCommand}" />
+
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="File patterns" Classes="opt" />
+                                    <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,6"
+                                             Text="{Binding FilePatterns}"
+                                             ToolTip.Tip="Semicolon separated, for example *.csv;*.txt" />
+
+                                    <CheckBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
+                                              Content="Include subfolders"
+                                              IsChecked="{Binding IncludeSubfolders}" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="After conversion" Classes="h2" />
+
+                                <Grid ColumnDefinitions="150,*,Auto" RowDefinitions="Auto,Auto,Auto">
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Source file" Classes="opt" />
+                                    <ComboBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,6"
+                                              HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding SourceActions}"
+                                              SelectedItem="{Binding SourceAction}" />
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Processed folder" Classes="opt" />
+                                    <TextBox Grid.Row="1" Grid.Column="1" Margin="0,0,0,6"
+                                             Text="{Binding ProcessedFolder}"
+                                             IsEnabled="{Binding NeedsProcessedFolder}" />
+                                    <Button Grid.Row="1" Grid.Column="2" Content="Browse" Margin="6,0,0,6"
+                                            IsEnabled="{Binding NeedsProcessedFolder}"
+                                            Command="{Binding $parent[UserControl].((vm:WatcherViewModel)DataContext).BrowseProcessedFolderCommand}" />
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Error folder" Classes="opt" />
+                                    <TextBox Grid.Row="2" Grid.Column="1"
+                                             Text="{Binding ErrorFolder}"
+                                             PlaceholderText="(leave failed files in place)" />
+                                    <Button Grid.Row="2" Grid.Column="2" Content="Browse" Margin="6,0,0,0"
+                                            Command="{Binding $parent[UserControl].((vm:WatcherViewModel)DataContext).BrowseErrorFolderCommand}" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Timing" Classes="h2" />
+
+                                <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto">
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Settle delay (ms)" Classes="opt" />
+                                    <NumericUpDown Grid.Row="0" Grid.Column="1" Margin="0,0,0,6"
+                                                   Minimum="0" Maximum="600000" Increment="250" FormatString="0"
+                                                   Value="{Binding StabilizationDelayMs}"
+                                                   ToolTip.Tip="How long a file must stop changing before it is converted." />
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Retries" Classes="opt" />
+                                    <NumericUpDown Grid.Row="1" Grid.Column="1" Margin="0,0,0,6"
+                                                   Minimum="1" Maximum="20" Increment="1" FormatString="0"
+                                                   Value="{Binding MaxRetries}" />
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Retry delay (ms)" Classes="opt" />
+                                    <NumericUpDown Grid.Row="2" Grid.Column="1"
+                                                   Minimum="0" Maximum="600000" Increment="500" FormatString="0"
+                                                   Value="{Binding RetryDelayMs}" />
+                                </Grid>
+
+                                <CheckBox Content="Convert files that are already in the folder when the watcher starts"
+                                          IsChecked="{Binding ProcessExistingFiles}" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

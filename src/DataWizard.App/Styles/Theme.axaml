@@ -1,0 +1,167 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+      Colour tokens for both variants. Every colour the application uses is
+      defined here twice, once per theme variant, so nothing has to be switched
+      in code and no control is left with a hard-coded colour that only works in
+      one theme.
+    -->
+    <Styles.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+
+                <ResourceDictionary x:Key="Light">
+                    <Color x:Key="DwAccentColor">#2563EB</Color>
+                    <SolidColorBrush x:Key="DwAccent" Color="#2563EB" />
+                    <SolidColorBrush x:Key="DwAccentMuted" Color="#DBEAFE" />
+                    <SolidColorBrush x:Key="DwSurface" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="DwSurfaceAlt" Color="#F5F6F8" />
+                    <SolidColorBrush x:Key="DwSurfaceSunken" Color="#ECEEF2" />
+                    <SolidColorBrush x:Key="DwBorder" Color="#D8DCE3" />
+                    <SolidColorBrush x:Key="DwBorderStrong" Color="#B6BDC8" />
+                    <SolidColorBrush x:Key="DwText" Color="#1B1F26" />
+                    <SolidColorBrush x:Key="DwTextMuted" Color="#5C6572" />
+                    <SolidColorBrush x:Key="DwTextFaint" Color="#8A93A1" />
+                    <SolidColorBrush x:Key="DwSuccess" Color="#15803D" />
+                    <SolidColorBrush x:Key="DwWarning" Color="#B45309" />
+                    <SolidColorBrush x:Key="DwError" Color="#B91C1C" />
+                    <SolidColorBrush x:Key="DwDropZone" Color="#F8FAFC" />
+                    <SolidColorBrush x:Key="DwDropZoneActive" Color="#DBEAFE" />
+                    <SolidColorBrush x:Key="DwCodeBackground" Color="#F1F3F7" />
+                </ResourceDictionary>
+
+                <ResourceDictionary x:Key="Dark">
+                    <Color x:Key="DwAccentColor">#60A5FA</Color>
+                    <SolidColorBrush x:Key="DwAccent" Color="#60A5FA" />
+                    <SolidColorBrush x:Key="DwAccentMuted" Color="#1E3A5F" />
+                    <SolidColorBrush x:Key="DwSurface" Color="#1B1F26" />
+                    <SolidColorBrush x:Key="DwSurfaceAlt" Color="#22262F" />
+                    <SolidColorBrush x:Key="DwSurfaceSunken" Color="#15181E" />
+                    <SolidColorBrush x:Key="DwBorder" Color="#343A45" />
+                    <SolidColorBrush x:Key="DwBorderStrong" Color="#4A5260" />
+                    <SolidColorBrush x:Key="DwText" Color="#E7EAEF" />
+                    <SolidColorBrush x:Key="DwTextMuted" Color="#A0A8B5" />
+                    <SolidColorBrush x:Key="DwTextFaint" Color="#727B89" />
+                    <SolidColorBrush x:Key="DwSuccess" Color="#4ADE80" />
+                    <SolidColorBrush x:Key="DwWarning" Color="#FBBF24" />
+                    <SolidColorBrush x:Key="DwError" Color="#F87171" />
+                    <SolidColorBrush x:Key="DwDropZone" Color="#1F242C" />
+                    <SolidColorBrush x:Key="DwDropZoneActive" Color="#1E3A5F" />
+                    <SolidColorBrush x:Key="DwCodeBackground" Color="#15181E" />
+                </ResourceDictionary>
+
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Styles.Resources>
+
+    <!-- ── Typography ─────────────────────────────────────────────────────── -->
+
+    <Style Selector="TextBlock.h1">
+        <Setter Property="FontSize" Value="20" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource DwText}" />
+    </Style>
+
+    <Style Selector="TextBlock.h2">
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource DwText}" />
+        <Setter Property="Margin" Value="0,0,0,2" />
+    </Style>
+
+    <Style Selector="TextBlock.hint">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource DwTextMuted}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style Selector="TextBlock.label">
+        <Setter Property="Foreground" Value="{DynamicResource DwText}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="TextBlock.mono">
+        <Setter Property="FontFamily" Value="Consolas, Menlo, monospace" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+    <!-- ── Cards and sections ─────────────────────────────────────────────── -->
+
+    <Style Selector="Border.card">
+        <Setter Property="Background" Value="{DynamicResource DwSurfaceAlt}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DwBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="16" />
+    </Style>
+
+    <Style Selector="Border.sunken">
+        <Setter Property="Background" Value="{DynamicResource DwSurfaceSunken}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DwBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="10" />
+    </Style>
+
+    <Style Selector="Separator">
+        <Setter Property="Background" Value="{DynamicResource DwBorder}" />
+        <Setter Property="Height" Value="1" />
+        <Setter Property="Margin" Value="0,8" />
+    </Style>
+
+    <!-- ── Status colours ─────────────────────────────────────────────────── -->
+
+    <Style Selector="TextBlock.success">
+        <Setter Property="Foreground" Value="{DynamicResource DwSuccess}" />
+    </Style>
+
+    <Style Selector="TextBlock.warning">
+        <Setter Property="Foreground" Value="{DynamicResource DwWarning}" />
+    </Style>
+
+    <Style Selector="TextBlock.error">
+        <Setter Property="Foreground" Value="{DynamicResource DwError}" />
+    </Style>
+
+    <!-- ── Controls ───────────────────────────────────────────────────────── -->
+
+    <Style Selector="Button.primary">
+        <Setter Property="Background" Value="{DynamicResource DwAccent}" />
+        <Setter Property="Foreground" Value="#FFFFFF" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Padding" Value="18,10" />
+        <Setter Property="CornerRadius" Value="6" />
+    </Style>
+
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DwAccent}" />
+        <Setter Property="Opacity" Value="0.88" />
+    </Style>
+
+    <Style Selector="Button.primary:disabled /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DwBorderStrong}" />
+        <Setter Property="Opacity" Value="0.6" />
+    </Style>
+
+    <Style Selector="TabControl">
+        <Setter Property="Background" Value="{DynamicResource DwSurface}" />
+    </Style>
+
+    <Style Selector="TabItem">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="MinHeight" Value="42" />
+        <Setter Property="Padding" Value="16,0" />
+    </Style>
+
+    <Style Selector="DataGrid">
+        <Setter Property="Background" Value="{DynamicResource DwSurface}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DwBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="GridLinesVisibility" Value="Horizontal" />
+        <Setter Property="HeadersVisibility" Value="Column" />
+        <Setter Property="CanUserResizeColumns" Value="True" />
+        <Setter Property="RowHeight" Value="32" />
+    </Style>
+
+</Styles>

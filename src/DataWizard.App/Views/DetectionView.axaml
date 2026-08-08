@@ -1,0 +1,469 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:DataWizard.App.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="1140" d:DesignHeight="640"
+             x:Class="DataWizard.App.Views.DetectionView"
+             x:DataType="vm:DetectionViewModel">
+
+    <UserControl.Styles>
+        <!-- Label column of every option row. -->
+        <Style Selector="TextBlock.opt">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,10,0" />
+            <Setter Property="Foreground" Value="{DynamicResource DwText}" />
+        </Style>
+        <Style Selector="Border.group">
+            <Setter Property="Background" Value="{DynamicResource DwSurfaceAlt}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource DwBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="14" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid ColumnDefinitions="1.15*,Auto,1*" Margin="16">
+
+        <!-- ══ Left: the settings themselves ═════════════════════════════ -->
+        <ScrollViewer Grid.Column="0">
+            <StackPanel>
+
+                <StackPanel Spacing="2" Margin="0,0,0,12">
+                    <TextBlock Text="Field and header recognition" Classes="h1" />
+                    <TextBlock Classes="hint"
+                               Text="These settings decide how a delimited text file is read. Every change is applied to the sample on the right immediately." />
+                </StackPanel>
+
+                <!-- ── Encoding ──────────────────────────────────────────── -->
+                <Border Classes="group">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Encoding" Classes="h2" />
+
+                        <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" >
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Force encoding" Classes="opt" />
+                            <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,0,0,6"
+                                      HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding EncodingOptions}"
+                                      SelectedItem="{Binding ForcedEncoding}"
+                                      ToolTip.Tip="Leave empty to detect the encoding from the file contents." />
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Fallback" Classes="opt" />
+                            <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,0,0,6"
+                                      HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding FallbackEncodingOptions}"
+                                      SelectedItem="{Binding FallbackEncoding}"
+                                      ToolTip.Tip="Used when detection is not confident enough." />
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Min. confidence" Classes="opt" />
+                            <Grid Grid.Row="2" Grid.Column="1" ColumnDefinitions="*,60" Margin="0,0,0,6">
+                                <Slider Grid.Column="0" Minimum="0" Maximum="1" TickFrequency="0.05"
+                                        IsSnapToTickEnabled="True"
+                                        Value="{Binding MinEncodingConfidence}" />
+                                <TextBlock Grid.Column="1" Classes="hint" VerticalAlignment="Center"
+                                           Text="{Binding MinEncodingConfidence, StringFormat='{}{0:P0}'}" />
+                            </Grid>
+
+                            <CheckBox Grid.Row="3" Grid.Column="1"
+                                      Content="A byte order mark always wins"
+                                      IsChecked="{Binding TrustByteOrderMark}" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Separator ─────────────────────────────────────────── -->
+                <Border Classes="group">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Separator and quoting" Classes="h2" />
+
+                        <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Force separator" Classes="opt" />
+                            <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,0,0,6"
+                                      HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding SeparatorOptions}"
+                                      SelectedItem="{Binding ForcedSeparator}" />
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Candidates" Classes="opt" />
+                            <TextBox Grid.Row="1" Grid.Column="1" Margin="0,0,0,6"
+                                     Text="{Binding CandidateSeparators}"
+                                     ToolTip.Tip="Characters tried during detection. Use \t for tab." />
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Quote character" Classes="opt" />
+                            <TextBox Grid.Row="2" Grid.Column="1" Margin="0,0,0,6" MaxLength="1"
+                                     Text="{Binding QuoteCharacter}" />
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Rows to analyse" Classes="opt" />
+                            <NumericUpDown Grid.Row="3" Grid.Column="1" Margin="0,0,0,6"
+                                           Minimum="2" Maximum="100000" Increment="50"
+                                           FormatString="0"
+                                           Value="{Binding AnalyzeLineCount}" />
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Min. consistency" Classes="opt" />
+                            <Grid Grid.Row="4" Grid.Column="1" ColumnDefinitions="*,60">
+                                <Slider Grid.Column="0" Minimum="0" Maximum="1" TickFrequency="0.05"
+                                        IsSnapToTickEnabled="True"
+                                        Value="{Binding MinSeparatorConfidence}"
+                                        ToolTip.Tip="Below this share of matching rows, the analysis reports a warning." />
+                                <TextBlock Grid.Column="1" Classes="hint" VerticalAlignment="Center"
+                                           Text="{Binding MinSeparatorConfidence, StringFormat='{}{0:P0}'}" />
+                            </Grid>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Header ────────────────────────────────────────────── -->
+                <Border Classes="group">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Header detection" Classes="h2" />
+                        <TextBlock Classes="hint"
+                                   Text="In Auto mode four signals are scored and combined with the weights below. The first row counts as a header when the combined score reaches the threshold." />
+
+                        <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Mode" Classes="opt" />
+                            <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,0,0,6"
+                                      HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding HeaderModes}"
+                                      SelectedItem="{Binding HeaderMode}" />
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Skip leading lines" Classes="opt" />
+                            <NumericUpDown Grid.Row="1" Grid.Column="1" Margin="0,0,0,6"
+                                           Minimum="0" Maximum="1000" Increment="1" FormatString="0"
+                                           Value="{Binding SkipLeadingLines}"
+                                           ToolTip.Tip="For files that start with a banner or comment block." />
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Score threshold" Classes="opt" />
+                            <Grid Grid.Row="2" Grid.Column="1" ColumnDefinitions="*,60" Margin="0,0,0,6">
+                                <Slider Grid.Column="0" Minimum="0" Maximum="1" TickFrequency="0.05"
+                                        IsSnapToTickEnabled="True"
+                                        Value="{Binding HeaderScoreThreshold}" />
+                                <TextBlock Grid.Column="1" Classes="hint" VerticalAlignment="Center"
+                                           Text="{Binding HeaderScoreThreshold, StringFormat='{}{0:P0}'}" />
+                            </Grid>
+
+                            <CheckBox Grid.Row="3" Grid.Column="1"
+                                      Content="Ignore blank lines before the first row"
+                                      IsChecked="{Binding SkipEmptyLines}" />
+                        </Grid>
+
+                        <Separator />
+
+                        <!-- Signal weights -->
+                        <Grid ColumnDefinitions="Auto,*,60" RowDefinitions="Auto,Auto,Auto,Auto">
+                            <CheckBox Grid.Row="0" Grid.Column="0" Content="Known field names" MinWidth="190"
+                                      IsChecked="{Binding UseKnownFieldNames}"
+                                      ToolTip.Tip="Scores how many of the first row's values match the pattern list below." />
+                            <Slider Grid.Row="0" Grid.Column="1" Minimum="0" Maximum="3" TickFrequency="0.1"
+                                    IsSnapToTickEnabled="True" Value="{Binding KnownFieldNameWeight}"
+                                    IsEnabled="{Binding UseKnownFieldNames}" />
+                            <TextBlock Grid.Row="0" Grid.Column="2" Classes="hint" VerticalAlignment="Center"
+                                       Text="{Binding KnownFieldNameWeight, StringFormat='{}{0:F1}'}" />
+
+                            <CheckBox Grid.Row="1" Grid.Column="0" Content="Type divergence"
+                                      IsChecked="{Binding UseTypeDivergence}"
+                                      ToolTip.Tip="Scores columns that are text on the first row and numeric or dates below it. The strongest signal for machine exports." />
+                            <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="3" TickFrequency="0.1"
+                                    IsSnapToTickEnabled="True" Value="{Binding TypeDivergenceWeight}"
+                                    IsEnabled="{Binding UseTypeDivergence}" />
+                            <TextBlock Grid.Row="1" Grid.Column="2" Classes="hint" VerticalAlignment="Center"
+                                       Text="{Binding TypeDivergenceWeight, StringFormat='{}{0:F1}'}" />
+
+                            <CheckBox Grid.Row="2" Grid.Column="0" Content="Unique values"
+                                      IsChecked="{Binding UseUniqueness}"
+                                      ToolTip.Tip="Column names are normally distinct; repeated values suggest data." />
+                            <Slider Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="3" TickFrequency="0.1"
+                                    IsSnapToTickEnabled="True" Value="{Binding UniquenessWeight}"
+                                    IsEnabled="{Binding UseUniqueness}" />
+                            <TextBlock Grid.Row="2" Grid.Column="2" Classes="hint" VerticalAlignment="Center"
+                                       Text="{Binding UniquenessWeight, StringFormat='{}{0:F1}'}" />
+
+                            <CheckBox Grid.Row="3" Grid.Column="0" Content="No empty cells"
+                                      IsChecked="{Binding UseNonEmptyRule}"
+                                      ToolTip.Tip="A header row rarely has gaps." />
+                            <Slider Grid.Row="3" Grid.Column="1" Minimum="0" Maximum="3" TickFrequency="0.1"
+                                    IsSnapToTickEnabled="True" Value="{Binding NonEmptyWeight}"
+                                    IsEnabled="{Binding UseNonEmptyRule}" />
+                            <TextBlock Grid.Row="3" Grid.Column="2" Classes="hint" VerticalAlignment="Center"
+                                       Text="{Binding NonEmptyWeight, StringFormat='{}{0:F1}'}" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Values ────────────────────────────────────────────── -->
+                <Border Classes="group">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Value types" Classes="h2" />
+
+                        <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Number format" Classes="opt" />
+                            <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,0,0,6"
+                                      HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding NumberFormatModes}"
+                                      SelectedItem="{Binding NumberFormat}"
+                                      ToolTip.Tip="Auto accepts 1234.56 first and then the culture below." />
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Number culture" Classes="opt" />
+                            <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,0,0,6"
+                                      HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding CultureOptions}"
+                                      SelectedItem="{Binding NumberCulture}" />
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Max. integer digits" Classes="opt" />
+                            <NumericUpDown Grid.Row="2" Grid.Column="1"
+                                           Minimum="1" Maximum="30" Increment="1" FormatString="0"
+                                           Value="{Binding MaxIntegerDigits}"
+                                           ToolTip.Tip="Longer digit runs stay text. Excel stores numbers as doubles, so beyond about 15 digits the value changes." />
+                        </Grid>
+
+                        <CheckBox Content="Keep leading zeros as text (007, 01067)"
+                                  IsChecked="{Binding PreserveLeadingZeros}" />
+                        <CheckBox Content="Accept thousands separators (1,234.56)"
+                                  IsChecked="{Binding AllowThousandsSeparator}"
+                                  ToolTip.Tip="Off by default because it makes 1.234 ambiguous." />
+                        <CheckBox Content="Quoted values are always text"
+                                  IsChecked="{Binding QuotedFieldsAreText}" />
+                        <CheckBox Content="Trim whitespace around unquoted values"
+                                  IsChecked="{Binding TrimWhitespace}" />
+
+                        <Separator />
+
+                        <CheckBox Content="Detect dates" IsChecked="{Binding DetectDates}" />
+
+                        <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto"
+                              IsEnabled="{Binding DetectDates}">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Date culture" Classes="opt" />
+                            <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,0,0,6"
+                                      HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding CultureOptions}"
+                                      SelectedItem="{Binding DateCulture}"
+                                      ToolTip.Tip="Only affects month names; the accepted formats are listed below." />
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Plausible years" Classes="opt" />
+                            <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,Auto,*">
+                                <NumericUpDown Grid.Column="0" Minimum="1" Maximum="9999" FormatString="0"
+                                               Value="{Binding MinDateYear}" />
+                                <TextBlock Grid.Column="1" Text="to" Classes="hint" Margin="8,0"
+                                           VerticalAlignment="Center" />
+                                <NumericUpDown Grid.Column="2" Minimum="1" Maximum="9999" FormatString="0"
+                                               Value="{Binding MaxDateYear}" />
+                            </Grid>
+                        </Grid>
+
+                        <StackPanel Spacing="4" IsEnabled="{Binding DetectDates}">
+                            <TextBlock Text="Accepted date formats, tried in order" Classes="hint" />
+                            <DataGrid ItemsSource="{Binding DateFormats}"
+                                      SelectedItem="{Binding SelectedDateFormat}"
+                                      Height="110" AutoGenerateColumns="False"
+                                      CanUserSortColumns="False">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Format" Binding="{Binding Value}" Width="*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Button Content="Add" Command="{Binding AddDateFormatCommand}" />
+                                <Button Content="Remove" Command="{Binding RemoveDateFormatCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Separator />
+
+                        <CheckBox Content="Detect booleans" IsChecked="{Binding DetectBooleans}" />
+                        <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto"
+                              IsEnabled="{Binding DetectBooleans}">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="True values" Classes="opt" />
+                            <TextBox Grid.Row="0" Grid.Column="1" Margin="0,0,0,6"
+                                     Text="{Binding TrueValues}"
+                                     ToolTip.Tip="Semicolon separated." />
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="False values" Classes="opt" />
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FalseValues}" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Header field names ────────────────────────────────── -->
+                <Border Classes="group">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Known field names" Classes="h2" />
+                        <TextBlock Classes="hint"
+                                   Text="Column names that mark a row as a header. Used by the 'Known field names' signal." />
+
+                        <DataGrid ItemsSource="{Binding HeaderPatterns}"
+                                  SelectedItem="{Binding SelectedHeaderPattern}"
+                                  Height="200" AutoGenerateColumns="False">
+                            <DataGrid.Columns>
+                                <DataGridCheckBoxColumn Header="On" Binding="{Binding Enabled}" Width="45" />
+                                <DataGridTextColumn Header="Pattern" Binding="{Binding Pattern}" Width="1.6*" />
+                                <DataGridTemplateColumn Header="Match" Width="130">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:NamePatternRow">
+                                            <TextBlock Text="{Binding Match}" VerticalAlignment="Center" Margin="6,0" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataTemplate x:DataType="vm:NamePatternRow">
+                                            <ComboBox ItemsSource="{Binding MatchModes}"
+                                                      SelectedItem="{Binding Match}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridCheckBoxColumn Header="Aa" Binding="{Binding CaseSensitive}" Width="45" />
+                                <DataGridTextColumn Header="Comment" Binding="{Binding Comment}" Width="1.4*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Button Content="Add" Command="{Binding AddHeaderPatternCommand}" />
+                            <Button Content="Remove" Command="{Binding RemoveHeaderPatternCommand}" />
+                            <Button Content="Restore defaults" Command="{Binding RestoreDefaultPatternsCommand}" />
+                            <Button Content="Import legacy XML..." Command="{Binding ImportLegacyConfigCommand}"
+                                    ToolTip.Tip="Reads a DataWizard.config.xml from a version before 0.2." />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Field rules ───────────────────────────────────────── -->
+                <Border Classes="group">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Data type rules" Classes="h2" />
+                        <TextBlock Classes="hint"
+                                   Text="Force the type of a column, overriding what the values suggest. Rules are evaluated in order; a rule targeting a column position wins over one matching a name." />
+
+                        <DataGrid ItemsSource="{Binding FieldRules}"
+                                  SelectedItem="{Binding SelectedFieldRule}"
+                                  Height="230" AutoGenerateColumns="False">
+                            <DataGrid.Columns>
+                                <DataGridCheckBoxColumn Header="On" Binding="{Binding Enabled}" Width="45" />
+                                <DataGridTextColumn Header="Pattern" Binding="{Binding Pattern}" Width="1.5*" />
+                                <DataGridTemplateColumn Header="Match" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:FieldRuleRow">
+                                            <TextBlock Text="{Binding Match}" VerticalAlignment="Center" Margin="6,0" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataTemplate x:DataType="vm:FieldRuleRow">
+                                            <ComboBox ItemsSource="{Binding MatchModes}"
+                                                      SelectedItem="{Binding Match}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Type" Width="110">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate x:DataType="vm:FieldRuleRow">
+                                            <TextBlock Text="{Binding DataType}" VerticalAlignment="Center" Margin="6,0" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataTemplate x:DataType="vm:FieldRuleRow">
+                                            <ComboBox ItemsSource="{Binding DataTypes}"
+                                                      SelectedItem="{Binding DataType}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Col." Binding="{Binding ColumnIndex}" Width="55"
+                                                    ClipboardContentBinding="{Binding ColumnIndex}" />
+                                <DataGridTextColumn Header="Date format" Binding="{Binding DateFormat}" Width="1.1*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Button Content="Add" Command="{Binding AddFieldRuleCommand}" />
+                            <Button Content="Remove" Command="{Binding RemoveFieldRuleCommand}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Grid.Column="1" Width="1" Margin="16,0"
+                Background="{DynamicResource DwBorder}" />
+
+        <!-- ══ Right: live sample ════════════════════════════════════════ -->
+        <Grid Grid.Column="2" RowDefinitions="Auto,Auto,Auto,*">
+
+            <StackPanel Grid.Row="0" Spacing="2" Margin="0,0,0,10">
+                <TextBlock Text="Live sample" Classes="h1" />
+                <TextBlock Classes="hint"
+                           Text="Paste a few rows of a real file here. Every setting on the left is applied to it as you change it." />
+            </StackPanel>
+
+            <TextBox Grid.Row="1" Height="130" AcceptsReturn="True"
+                     TextWrapping="NoWrap"
+                     FontFamily="Consolas, Menlo, monospace"
+                     FontSize="12"
+                     Text="{Binding SampleText}" />
+
+            <TextBlock Grid.Row="2" Classes="error" Margin="0,8,0,0" TextWrapping="Wrap"
+                       Text="{Binding TestError}"
+                       IsVisible="{Binding TestError, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+            <ScrollViewer Grid.Row="3" Margin="0,10,0,0">
+                <StackPanel Spacing="12" DataContext="{Binding TestResult}"
+                            IsVisible="{Binding, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            x:DataType="vm:AnalysisPreview">
+
+                    <Border Classes="card">
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Separator" Classes="hint" Margin="0,0,12,4" />
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Separator}" Margin="0,0,0,4" TextWrapping="Wrap" />
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Header" Classes="hint" Margin="0,0,12,4" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Header}" Margin="0,0,0,4" TextWrapping="Wrap" />
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Structure" Classes="hint" Margin="0,0,12,0" />
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Structure}" TextWrapping="Wrap" />
+                        </Grid>
+                    </Border>
+
+                    <Border Classes="card" IsVisible="{Binding HasWarnings}">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Warnings" Classes="h2 warning" />
+                            <ItemsControl ItemsSource="{Binding Warnings}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="x:String">
+                                        <TextBlock Text="{Binding}" Classes="warning" TextWrapping="Wrap" Margin="0,0,0,4" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Columns" Classes="h2" />
+                        <DataGrid ItemsSource="{Binding Columns}" IsReadOnly="True"
+                                  MaxHeight="220" AutoGenerateColumns="False">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
+                                <DataGridTextColumn Header="Used" Binding="{Binding EffectiveType}" Width="Auto" />
+                                <DataGridTextColumn Header="Sample" Binding="{Binding Sample}" Width="*" />
+                                <DataGridTextColumn Header="Rule" Binding="{Binding Rule}" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Header signals" Classes="h2" />
+                        <DataGrid ItemsSource="{Binding HeaderSignals}" IsReadOnly="True"
+                                  MaxHeight="180" AutoGenerateColumns="False">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Signal" Binding="{Binding Name}" Width="Auto" />
+                                <DataGridTextColumn Header="Score" Binding="{Binding Score}" Width="Auto" />
+                                <DataGridTextColumn Header="Weight" Binding="{Binding Weight}" Width="Auto" />
+                                <DataGridTextColumn Header="Reasoning" Binding="{Binding Detail}" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Rows as parsed" Classes="h2" />
+                        <Border Classes="sunken">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" MaxHeight="200">
+                                <SelectableTextBlock Text="{Binding SampleText}" Classes="mono" />
+                            </ScrollViewer>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

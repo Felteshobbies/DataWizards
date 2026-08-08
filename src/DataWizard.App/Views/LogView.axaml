@@ -1,0 +1,64 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:DataWizard.App.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="620"
+             x:Class="DataWizard.App.Views.LogView"
+             x:DataType="vm:LogViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="16">
+
+        <!-- ── Filters ────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Classes="card" Margin="0,0,0,12" Padding="12">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12"
+                            VerticalAlignment="Center">
+                    <CheckBox Content="Details" IsChecked="{Binding ShowDetails}"
+                              ToolTip.Tip="Per-file analysis output: encoding, separator, column types." />
+                    <CheckBox Content="Info" IsChecked="{Binding ShowInfo}" />
+                    <CheckBox Content="Warnings" IsChecked="{Binding ShowWarnings}" />
+                    <CheckBox Content="Errors" IsChecked="{Binding ShowErrors}" />
+                </StackPanel>
+
+                <TextBox Grid.Column="1" Margin="16,0"
+                         Text="{Binding FilterText}"
+                         PlaceholderText="Filter by text..." />
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
+                    <CheckBox Content="Follow" IsChecked="{Binding AutoScroll}"
+                              VerticalAlignment="Center"
+                              ToolTip.Tip="Scroll to the newest entry automatically." />
+                    <Button Content="Copy" Command="{Binding CopyCommand}" />
+                    <Button Content="Clear" Command="{Binding ClearLogCommand}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ── Entries ────────────────────────────────────────────────────── -->
+        <Border Grid.Row="1" Classes="sunken" Padding="0">
+            <ScrollViewer Name="LogScroller">
+                <ItemsControl ItemsSource="{Binding Rows}" Margin="10,8">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:LogRow">
+                            <Grid ColumnDefinitions="66,*" Margin="0,1">
+                                <TextBlock Grid.Column="0" Text="{Binding Timestamp}"
+                                           Classes="mono hint" />
+                                <SelectableTextBlock Grid.Column="1"
+                                                     Text="{Binding Message}"
+                                                     Classes="mono"
+                                                     Classes.success="{Binding IsSuccess}"
+                                                     Classes.warning="{Binding IsWarning}"
+                                                     Classes.error="{Binding IsError}"
+                                                     Classes.hint="{Binding IsDetail}"
+                                                     TextWrapping="Wrap" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+
+        <TextBlock Grid.Row="2" Text="{Binding SummaryText}" Classes="hint" Margin="0,8,0,0" />
+    </Grid>
+</UserControl>

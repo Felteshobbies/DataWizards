@@ -1,0 +1,109 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:DataWizard.App.ViewModels"
+        xmlns:views="using:DataWizard.App.Views"
+        mc:Ignorable="d" d:DesignWidth="1180" d:DesignHeight="760"
+        x:Class="DataWizard.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/wizard.ico"
+        Title="{Binding Title}"
+        Width="1180" Height="760"
+        MinWidth="900" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource DwSurface}">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ── Header ─────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource DwSurfaceAlt}"
+                BorderBrush="{DynamicResource DwBorder}"
+                BorderThickness="0,0,0,1"
+                Padding="16,10">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
+                    <Image Source="/Assets/wizard.ico" Width="26" Height="26"
+                           VerticalAlignment="Center" />
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="DataWizards" Classes="h1" />
+                        <TextBlock Text="CSV and Excel conversion" Classes="hint" />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8"
+                            VerticalAlignment="Center">
+
+                    <TextBlock Text="Appearance" Classes="hint" VerticalAlignment="Center" />
+                    <ComboBox ItemsSource="{Binding ThemeModes}"
+                              SelectedItem="{Binding Theme}"
+                              MinWidth="100"
+                              ToolTip.Tip="System follows the operating system setting." />
+
+                    <Border Width="1" Background="{DynamicResource DwBorder}" Margin="6,2" />
+
+                    <Button Content="Save settings" Command="{Binding SaveSettingsCommand}"
+                            ToolTip.Tip="Writes every tab's settings to disk." />
+
+                    <Panel>
+                        <Button Content="Reset..."
+                                Command="{Binding BeginResetSettingsCommand}"
+                                IsVisible="{Binding !IsConfirmingReset}" />
+
+                        <StackPanel Orientation="Horizontal" Spacing="6"
+                                    IsVisible="{Binding IsConfirmingReset}">
+                            <TextBlock Text="Discard all settings?" Classes="warning"
+                                       VerticalAlignment="Center" />
+                            <Button Content="Yes, reset" Command="{Binding ConfirmResetSettingsCommand}" />
+                            <Button Content="Cancel" Command="{Binding CancelResetSettingsCommand}" />
+                        </StackPanel>
+                    </Panel>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ── Tabs ───────────────────────────────────────────────────────── -->
+        <TabControl Grid.Row="1" Padding="0">
+
+            <TabItem Header="Convert">
+                <views:ConvertView DataContext="{Binding Convert}" />
+            </TabItem>
+
+            <TabItem Header="Detection">
+                <views:DetectionView DataContext="{Binding Detection}" />
+            </TabItem>
+
+            <TabItem Header="Output">
+                <views:OutputView DataContext="{Binding Output}" />
+            </TabItem>
+
+            <TabItem Header="Watcher">
+                <views:WatcherView DataContext="{Binding Watcher}" />
+            </TabItem>
+
+            <TabItem Header="Log">
+                <views:LogView DataContext="{Binding Log}" />
+            </TabItem>
+
+            <TabItem Header="Help">
+                <views:HelpView />
+            </TabItem>
+        </TabControl>
+
+        <!-- ── Status bar ─────────────────────────────────────────────────── -->
+        <Border Grid.Row="2"
+                Background="{DynamicResource DwSurfaceAlt}"
+                BorderBrush="{DynamicResource DwBorder}"
+                BorderThickness="0,1,0,0"
+                Padding="16,7">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Text="{Binding StatusText}" Classes="hint"
+                           TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="1" Text="{Binding VersionText, StringFormat='v{0}'}"
+                           Classes="hint" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

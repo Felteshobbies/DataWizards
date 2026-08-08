@@ -1,0 +1,4 @@
+customer_id;name;zip;price;quantity;order_date
+00123;Widget Ltd;01067;19,99;5;31.01.2025
+00456;Gadget GmbH;80331;4,50;12;01.02.2025
+00789;Sprocket AG;20095;123,00;3;15.02.2025
