@@ -63,18 +63,48 @@ public partial class DetectionViewModel : ViewModelBase
         _session = session;
         _dialogs = dialogs;
 
-        SampleText = string.Join(Environment.NewLine,
-            "customer_id;name;zip;price;order_date",
-            "00123;Widget Ltd;01067;19,99;31.01.2025",
-            "00456;Gadget GmbH;80331;4,50;01.02.2025",
-            "00789;Sprocket AG;20095;123,00;15.02.2025");
+        // Everything in here must be suppressed. Assigning SampleText raises a
+        // change notification, and re-running the test writes the grids back into
+        // the settings - which, before the grids are filled, would replace the
+        // stored pattern lists with empty ones.
+        using (SuspendTest())
+        {
+            SampleText = string.Join(Environment.NewLine,
+                "customer_id;name;zip;price;order_date",
+                "00123;Widget Ltd;01067;19,99;31.01.2025",
+                "00456;Gadget GmbH;80331;4,50;01.02.2025",
+                "00789;Sprocket AG;20095;123,00;15.02.2025");
 
-        LoadFromSettings();
+            LoadFromSettings();
+
+            HeaderPatterns.CollectionChanged += OnRuleCollectionChanged;
+            FieldRules.CollectionChanged += OnRuleCollectionChanged;
+            DateFormats.CollectionChanged += OnRuleCollectionChanged;
+        }
+
         RunTest();
+    }
 
-        HeaderPatterns.CollectionChanged += OnRuleCollectionChanged;
-        FieldRules.CollectionChanged += OnRuleCollectionChanged;
-        DateFormats.CollectionChanged += OnRuleCollectionChanged;
+    /// <summary>
+    /// Stops the live sample from being re-analysed until the returned scope is
+    /// disposed.
+    /// </summary>
+    /// <remarks>
+    /// Restores the previous value rather than clearing the flag, so nested
+    /// suspensions - a load performed inside an import, for instance - cannot
+    /// re-enable the test half way through and write a partially filled grid back
+    /// into the settings.
+    /// </remarks>
+    private IDisposable SuspendTest()
+    {
+        var previous = _suppressTest;
+        _suppressTest = true;
+        return new TestSuspension(this, previous);
+    }
+
+    private sealed class TestSuspension(DetectionViewModel owner, bool previous) : IDisposable
+    {
+        public void Dispose() => owner._suppressTest = previous;
     }
 
     private DetectionSettings Detection => _session.Settings.Detection;
@@ -376,17 +406,17 @@ public partial class DetectionViewModel : ViewModelBase
     [RelayCommand]
     private void RestoreDefaultPatterns()
     {
-        _suppressTest = true;
+        using (SuspendTest())
+        {
+            HeaderPatterns.Clear();
+            foreach (var pattern in DefaultPatterns.CreateKnownFieldNames())
+                HeaderPatterns.Add(new NamePatternRow(pattern));
 
-        HeaderPatterns.Clear();
-        foreach (var pattern in DefaultPatterns.CreateKnownFieldNames())
-            HeaderPatterns.Add(new NamePatternRow(pattern));
+            FieldRules.Clear();
+            foreach (var rule in DefaultPatterns.CreateFieldRules())
+                FieldRules.Add(new FieldRuleRow(rule));
+        }
 
-        FieldRules.Clear();
-        foreach (var rule in DefaultPatterns.CreateFieldRules())
-            FieldRules.Add(new FieldRuleRow(rule));
-
-        _suppressTest = false;
         _session.Log(LogLevel.Info, "Restored the built-in pattern lists.");
         RunTest();
     }
@@ -408,23 +438,22 @@ public partial class DetectionViewModel : ViewModelBase
         {
             var result = LegacyConfigImporter.ImportFile(path);
 
-            _suppressTest = true;
-
-            if (result.HeaderPatterns.Count > 0)
+            using (SuspendTest())
             {
-                HeaderPatterns.Clear();
-                foreach (var pattern in result.HeaderPatterns)
-                    HeaderPatterns.Add(new NamePatternRow(pattern));
-            }
+                if (result.HeaderPatterns.Count > 0)
+                {
+                    HeaderPatterns.Clear();
+                    foreach (var pattern in result.HeaderPatterns)
+                        HeaderPatterns.Add(new NamePatternRow(pattern));
+                }
 
-            if (result.FieldRules.Count > 0)
-            {
-                FieldRules.Clear();
-                foreach (var rule in result.FieldRules)
-                    FieldRules.Add(new FieldRuleRow(rule));
+                if (result.FieldRules.Count > 0)
+                {
+                    FieldRules.Clear();
+                    foreach (var rule in result.FieldRules)
+                        FieldRules.Add(new FieldRuleRow(rule));
+                }
             }
-
-            _suppressTest = false;
 
             _session.Log(LogLevel.Success,
                 $"Imported {result.HeaderPatterns.Count} header pattern(s) and " +
@@ -437,7 +466,7 @@ public partial class DetectionViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            _suppressTest = false;
+            // The suspension scope has already restored the flag by this point.
             _session.Log(LogLevel.Error, $"Could not import '{path}': {ex.Message}");
         }
     }
@@ -493,21 +522,20 @@ public partial class DetectionViewModel : ViewModelBase
     /// <summary>Rebuilds the grids from the settings, after a reset or import.</summary>
     public void LoadFromSettings()
     {
-        _suppressTest = true;
+        using (SuspendTest())
+        {
+            HeaderPatterns.Clear();
+            foreach (var pattern in Detection.KnownFieldNames)
+                HeaderPatterns.Add(new NamePatternRow(pattern));
 
-        HeaderPatterns.Clear();
-        foreach (var pattern in Detection.KnownFieldNames)
-            HeaderPatterns.Add(new NamePatternRow(pattern));
+            FieldRules.Clear();
+            foreach (var rule in Detection.FieldRules)
+                FieldRules.Add(new FieldRuleRow(rule));
 
-        FieldRules.Clear();
-        foreach (var rule in Detection.FieldRules)
-            FieldRules.Add(new FieldRuleRow(rule));
-
-        DateFormats.Clear();
-        foreach (var format in Detection.DateFormats)
-            DateFormats.Add(new TextRow(format));
-
-        _suppressTest = false;
+            DateFormats.Clear();
+            foreach (var format in Detection.DateFormats)
+                DateFormats.Add(new TextRow(format));
+        }
 
         OnPropertyChanged(string.Empty);
     }

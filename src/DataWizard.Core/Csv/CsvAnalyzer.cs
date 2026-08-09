@@ -21,7 +21,14 @@ public sealed class CsvAnalyzer
     /// Above the setting's own threshold the file is still read, but the user is
     /// told the choice was a guess.
     /// </summary>
-    private const double UncertainEncodingConfidence = 0.8;
+    /// <remarks>
+    /// Statistical detection is inherently a guess, and short files give it little
+    /// to work with - the single-byte code pages in particular are hard to tell
+    /// apart, so a file can decode "successfully" into the wrong accented
+    /// characters with nothing to show for it. The bar is set low enough that a
+    /// merely unemphatic UTF-8 verdict does not raise a false alarm.
+    /// </remarks>
+    private const double UncertainEncodingConfidence = 0.7;
 
     private readonly DetectionSettings _settings;
 
@@ -47,21 +54,21 @@ public sealed class CsvAnalyzer
                 $"Encoding could not be detected with sufficient confidence; " +
                 $"falling back to {encodingResult.Encoding.WebName}. Non-ASCII characters may be wrong.");
         }
-        else if (encodingResult.Source == EncodingSource.Detected &&
-                 encodingResult.Confidence < UncertainEncodingConfidence)
+
+        var sample = ReadSample(path, encodingResult.Encoding, out var firstContentLine, out var skippedLines);
+
+        if (encodingResult.Source == EncodingSource.Detected &&
+            encodingResult.Confidence < UncertainEncodingConfidence &&
+            ContainsNonAscii(sample))
         {
-            // Statistical detection is a guess, and on short files a weak one. The
-            // single-byte code pages in particular are hard to tell apart, so a
-            // file can decode "successfully" into the wrong accented characters
-            // with nothing to show for it. Say so rather than letting the user
-            // discover it in the output.
+            // Only worth saying when it could actually matter. A pure ASCII file
+            // decodes identically under every encoding on offer, so a low
+            // confidence score there has no consequence to warn about.
             warnings.Add(
                 $"Encoding was detected as {encodingResult.Encoding.WebName} with only " +
                 $"{encodingResult.Confidence:P0} confidence. If accented characters look wrong, " +
                 "set the encoding explicitly (windows-1252 for most Western European exports).");
         }
-
-        var sample = ReadSample(path, encodingResult.Encoding, out var firstContentLine, out var skippedLines);
 
         if (skippedLines > 0)
             warnings.Add($"Skipped {skippedLines} leading line(s) before the first content row.");
@@ -447,6 +454,21 @@ public sealed class CsvAnalyzer
             IsFieldCountConsistent = true,
             Warnings = warnings
         };
+    }
+
+    /// <summary>
+    /// Whether the sample holds any character outside plain ASCII. Below that
+    /// boundary every candidate encoding decodes identically.
+    /// </summary>
+    private static bool ContainsNonAscii(string sample)
+    {
+        foreach (var c in sample)
+        {
+            if (!char.IsAscii(c))
+                return true;
+        }
+
+        return false;
     }
 
     /// <summary>

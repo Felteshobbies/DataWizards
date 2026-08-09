@@ -70,6 +70,19 @@ public partial class ConvertView : UserControl
             await model.BrowseFilesCommand.ExecuteAsync(null);
     }
 
+    /// <summary>
+    /// Widens or narrows the analysis panel as its handle is dragged.
+    /// </summary>
+    /// <remarks>
+    /// The handle sits to the left of the panel, so dragging right shrinks it -
+    /// hence the inverted delta. The view model clamps the result.
+    /// </remarks>
+    private void OnSplitterDrag(object? sender, VectorEventArgs e)
+    {
+        if (Model is { } model)
+            model.AnalysisPanelWidth -= e.Vector.X;
+    }
+
     /// <summary>Highlights the drop zone while a drag is over the tab.</summary>
     private void SetDropZoneActive(bool active)
     {

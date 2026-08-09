@@ -44,11 +44,15 @@ public partial class ConvertViewModel : ViewModelBase
     [ObservableProperty]
     public partial string? PreviewError { get; set; }
 
+    [ObservableProperty]
+    public partial bool IsAnalysisExpanded { get; set; }
+
     public ConvertViewModel(AppSession session, DialogService dialogs)
     {
         _session = session;
         _dialogs = dialogs;
         StatusText = "Drop files to get started.";
+        IsAnalysisExpanded = session.Settings.ShowAnalysisPanel;
 
         Files.CollectionChanged += (_, _) =>
         {
@@ -316,7 +320,80 @@ public partial class ConvertViewModel : ViewModelBase
         CancelCommand.NotifyCanExecuteChanged();
     }
 
-    partial void OnSelectedFileChanged(FileRow? value) => _ = RefreshPreviewAsync(value);
+    /// <summary>Width of the analysis panel, remembered between sessions.</summary>
+    public double AnalysisPanelWidth
+    {
+        get => _session.Settings.AnalysisPanelWidth;
+        set
+        {
+            var clamped = Math.Clamp(value, 320d, 900d);
+
+            if (Math.Abs(_session.Settings.AnalysisPanelWidth - clamped) < 0.5)
+                return;
+
+            _session.Settings.AnalysisPanelWidth = clamped;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>True when the current analysis found something worth reviewing.</summary>
+    public bool AnalysisNeedsAttention => Preview?.NeedsAttention == true;
+
+    /// <summary>The one-line verdict shown next to the toggle when the panel is closed.</summary>
+    public string AnalysisSummary
+    {
+        get
+        {
+            if (PreviewError is not null)
+                return PreviewError;
+
+            if (Preview is null)
+                return SelectedFile is null
+                    ? "Select a file to see how it was read."
+                    : "Analysing...";
+
+            return Preview.Compact;
+        }
+    }
+
+    /// <summary>The reason the panel opened, or a reassurance that nothing is odd.</summary>
+    public string AnalysisHeadline => Preview?.AttentionHeadline ?? string.Empty;
+
+    [RelayCommand]
+    private void ToggleAnalysis()
+    {
+        IsAnalysisExpanded = !IsAnalysisExpanded;
+
+        // An explicit collapse is a decision, not an accident: remember it so the
+        // panel does not reappear on the next file. Ambiguous analyses still
+        // override this, because that is the case worth interrupting for.
+        _session.Settings.ShowAnalysisPanel = IsAnalysisExpanded;
+    }
+
+    partial void OnIsAnalysisExpandedChanged(bool value) =>
+        OnPropertyChanged(nameof(AnalysisToggleLabel));
+
+    /// <summary>Chevron pointing the way the panel will move.</summary>
+    public string AnalysisToggleLabel => IsAnalysisExpanded ? "›" : "‹";
+
+    partial void OnPreviewChanged(AnalysisPreview? value)
+    {
+        OnPropertyChanged(nameof(AnalysisNeedsAttention));
+        OnPropertyChanged(nameof(AnalysisSummary));
+        OnPropertyChanged(nameof(AnalysisHeadline));
+
+        // Open unprompted only when the detection was genuinely unclear.
+        if (value is { NeedsAttention: true })
+            IsAnalysisExpanded = true;
+    }
+
+    partial void OnPreviewErrorChanged(string? value) => OnPropertyChanged(nameof(AnalysisSummary));
+
+    partial void OnSelectedFileChanged(FileRow? value)
+    {
+        OnPropertyChanged(nameof(AnalysisSummary));
+        _ = RefreshPreviewAsync(value);
+    }
 
     /// <summary>
     /// Analyses the selected file in the background so the preview never blocks the

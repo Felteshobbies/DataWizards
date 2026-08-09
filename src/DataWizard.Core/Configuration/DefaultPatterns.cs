@@ -45,8 +45,9 @@ public static class DefaultPatterns
         Text("sku"),
         Text("ean"),
         Text("gtin"),
-        Word(@"part[\s_-]?(no|nr|number)?", "part / part-no / partnumber"),
-        Text("teilenummer"),
+        Word(@"\bpart([\s_-]?(no|nr|number))?\b", "part / part-no / partnumber, but not 'department'"),
+        Word(@"teile?[\s_-]?(nr|no|nummer|number)", "teilnummer and teilenummer"),
+        Word(@"^mat(erial)?[\s_-]?(nr|no|nummer|number)$", "Material number"),
 
         // Names and descriptions
         Word(@"^name$"),
@@ -98,6 +99,7 @@ public static class DefaultPatterns
         // Contact
         Text("email"),
         Text("e-mail"),
+        Word(@"^mail$"),
         Text("phone"),
         Text("telefon"),
         Word(@"^(tel|fax|mobile|mobil)$"),
@@ -106,6 +108,7 @@ public static class DefaultPatterns
         Text("quantity"),
         Text("menge"),
         Text("anzahl"),
+        Word(@"^count$"),
         Word(@"^(qty|stk|pcs)$"),
         Text("weight"),
         Text("gewicht"),
@@ -141,6 +144,19 @@ public static class DefaultPatterns
         Rule(@"(number|nummer|_no|_nr)$", MatchMode.Regex, FieldDataType.Text),
         Rule("customerno", MatchMode.Contains, FieldDataType.Text),
         Rule("kundennummer", MatchMode.Contains, FieldDataType.Text),
+
+        // Article, part and material numbers. Carried over from the pre-0.2
+        // configuration, where they had clearly been added in response to real
+        // data, but anchored rather than copied verbatim: the originals were
+        // ".*artikel.*" and ".*teil.*", which also match "Artikelpreis" and
+        // "Anteil" and would turn those numeric columns into text.
+        Rule(@"^(artikel|article)([\s_-]?(nr|no|num|nummer|number))?$", MatchMode.Regex, FieldDataType.Text,
+            "Article number - leading zeros must survive"),
+        Rule(@"^(teil|teile|part)([\s_-]?(nr|no|num|nummer|number))?$", MatchMode.Regex, FieldDataType.Text,
+            "Part number"),
+        Rule(@"^mat(erial)?[\s_-]?(nr|no|num|nummer|number)$", MatchMode.Regex, FieldDataType.Text,
+            "Material number, as used by SAP and similar systems"),
+
         Rule("sku", MatchMode.Contains, FieldDataType.Text),
         Rule("ean", MatchMode.Contains, FieldDataType.Text, "13 digits - too long for a double"),
         Rule("gtin", MatchMode.Contains, FieldDataType.Text),

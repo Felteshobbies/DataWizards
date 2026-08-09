@@ -58,7 +58,13 @@
             <!-- ══ Analysis ══ -->
             <TextBlock Text="Reading the analysis panel" Classes="section" />
             <TextBlock Classes="body"
-                       Text="Selecting a text file on the Convert tab shows what the analyser made of it, and why. This is the place to look when a file does not convert the way you expected." />
+                       Text="Below the file list a single line reports how the selected file was read: separator, column count, header, line count and encoding. That is usually all the confirmation needed." />
+            <TextBlock Classes="body"
+                       Text="The full analysis lives in a panel on the right edge. Open it with the Details button, or with the ANALYSIS strip on the edge itself; drag its left border to widen it. It stays as you leave it between sessions." />
+            <TextBlock Classes="body"
+                       Text="The panel opens on its own only when the detection was genuinely ambiguous, and then says why at the top. That means a warning was raised, or a column holds values of different kinds with no rule to settle it, or the header score landed within a hair of the threshold - a decision that could as easily have gone the other way. An amber dot on the summary line and on the edge strip marks the same thing." />
+            <TextBlock Classes="body"
+                       Text="Inside, the verdict and the column types are shown straight away. The evidence behind each decision sits in collapsed sections below it, so it is there when a file misbehaves and out of the way when it does not." />
             <TextBlock Classes="item"
                        Text="  Separator candidates - every candidate character scored by how consistently it produces the same number of columns. The winner is the most consistent one, not the most frequent, so a description column full of commas cannot outvote the real separator." />
             <TextBlock Classes="item"

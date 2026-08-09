@@ -259,7 +259,7 @@ public class CsvAnalyzerTests
         // Either the detector was unsure, or it was confident - only the unsure
         // case must produce the hint.
         if (analysis.EncodingResult.Source == EncodingSource.Detected &&
-            analysis.EncodingResult.Confidence < 0.8)
+            analysis.EncodingResult.Confidence < 0.7)
         {
             Assert.Contains(analysis.Warnings, w => w.Contains("confidence"));
             Assert.Contains(analysis.Warnings, w => w.Contains("windows-1252"));
@@ -271,6 +271,23 @@ public class CsvAnalyzerTests
     {
         using var workspace = new TempWorkspace();
         var path = workspace.WriteLines("plain.csv", "id;name", "1;Widget", "2;Gadget");
+
+        var analysis = new CsvAnalyzer(Settings()).Analyze(path);
+
+        Assert.DoesNotContain(analysis.Warnings, w => w.Contains("confidence"));
+    }
+
+    /// <summary>
+    /// Below the ASCII boundary every candidate encoding decodes identically, so a
+    /// low confidence score has no consequence and warning about it is noise.
+    /// </summary>
+    [Fact]
+    public void AnAsciiOnlyFileNeverWarnsAboutEncodingConfidence()
+    {
+        using var workspace = new TempWorkspace();
+
+        // Short and featureless: the kind of input a detector is least sure about.
+        var path = workspace.WriteFile("tiny.csv", "a;b\r\n1;2\r\n");
 
         var analysis = new CsvAnalyzer(Settings()).Analyze(path);
 

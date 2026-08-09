@@ -51,7 +51,21 @@ sensible range are clamped on load.
 
 ## What the analysis panel tells you
 
-Select a text file on the Convert tab and the panel reports how it was read:
+Below the file list, one line reports how the selected file was read — separator,
+column count, header, line count, encoding. That is usually all the confirmation
+needed.
+
+The full analysis lives in a panel on the right edge, opened with **Details** or
+the edge strip and resizable by dragging its border. It **opens by itself only
+when the detection was genuinely ambiguous**, and then states why at the top:
+a warning was raised, a column holds values of different kinds with no rule to
+settle it, or the header score landed within a hair of the threshold — a decision
+that could as easily have gone the other way. An amber dot marks the same thing
+without opening anything.
+
+Inside, the verdict and the column types are shown immediately; the evidence
+behind each decision sits in collapsed sections, present when a file misbehaves
+and out of the way when it does not:
 
 **Separator candidates** — every candidate character, scored by how consistently
 it produces the same number of columns. The winner is the *most consistent*
@@ -244,6 +258,41 @@ cd DataWizards
 dotnet build
 dotnet test
 dotnet run --project src/DataWizard.App
+```
+
+### Publishing a standalone executable
+
+```bash
+dotnet publish src/DataWizard.App -p:PublishProfile=win-x64
+```
+
+Produces a single `DataWizard.exe` in
+`src/DataWizard.App/bin/publish/win-x64/` — roughly 71 MB, with the .NET runtime,
+the Avalonia native libraries and all dependencies inside it. Nothing needs to be
+installed on the target machine; copy the file and run it.
+
+An ARM64 profile is available as `-p:PublishProfile=win-arm64`. Publishing with a
+bare runtime identifier works too and applies the same settings:
+
+```bash
+dotnet publish src/DataWizard.App -r win-x64 -c Release
+```
+
+A plain `dotnet build` stays runtime-agnostic, so day-to-day builds and tests are
+not slowed down by any of this.
+
+**On the size.** Most of it is the .NET runtime plus Skia, which Avalonia renders
+with. Trimming would cut it substantially but is deliberately off: Avalonia's view
+locator, the MVVM toolkit and DocumentFormat.OpenXml all resolve types by
+reflection, so a trimmed build fails at runtime rather than at build time — and
+only on the code path that happens to need the removed type. If you want to try
+it, set `PublishTrimmed` in the profile and test every tab.
+
+Framework-dependent output is far smaller if the target machines already have the
+.NET 10 desktop runtime:
+
+```bash
+dotnet publish src/DataWizard.App -r win-x64 --self-contained false
 ```
 
 ---

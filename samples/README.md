@@ -6,6 +6,7 @@ tab and read the analysis panel.
 | File | What it demonstrates |
 |---|---|
 | `leading-zeros-and-german-numbers.csv` | `00123` and `01067` stay text; `19,99` becomes 19.99; `31.01.2025` becomes a real date |
+| `erp-article-export.csv` | the shipped rules on a typical ERP export: `ArtikelNr` and `MatNr` keep their leading zeros, while `Artikelpreis` stays a decimal and `Anteil` stays a number rather than being dragged into text by the article and part rules |
 | `semicolon-quoted.csv` | quoted values containing `\|` and `,` do not split the record |
 | `pipe-separated.csv` | pipe separator, with a `\|` inside a quoted value |
 | `tab-separated-no-header.csv` | tab separator, and a file with no header row |

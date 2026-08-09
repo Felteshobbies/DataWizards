@@ -15,6 +15,19 @@ public sealed class DataWizardSettings
     /// <summary>Colour scheme of the application window.</summary>
     public ThemeMode Theme { get; set; } = ThemeMode.System;
 
+    /// <summary>
+    /// Whether the analysis panel on the Convert tab starts open.
+    /// </summary>
+    /// <remarks>
+    /// Closed by default. The panel explains every detection decision, which is
+    /// exactly what is wanted when a file reads wrongly and pure noise the rest of
+    /// the time. It opens by itself when the analysis is ambiguous.
+    /// </remarks>
+    public bool ShowAnalysisPanel { get; set; }
+
+    /// <summary>Width of the analysis panel in pixels, so a resize is remembered.</summary>
+    public double AnalysisPanelWidth { get; set; } = 500d;
+
     /// <summary>How CSV files are interpreted.</summary>
     public DetectionSettings Detection { get; set; } = new();
 
@@ -149,6 +162,7 @@ public sealed class DataWizardSettings
         Detection.Normalize();
         Conversion.Normalize();
         Watcher.Rules ??= [];
+        AnalysisPanelWidth = Math.Clamp(AnalysisPanelWidth, 320d, 900d);
     }
 
     /// <summary>Creates a deep copy, so the settings UI can cancel out of edits.</summary>
@@ -156,6 +170,8 @@ public sealed class DataWizardSettings
     {
         Version = Version,
         Theme = Theme,
+        ShowAnalysisPanel = ShowAnalysisPanel,
+        AnalysisPanelWidth = AnalysisPanelWidth,
         Detection = Detection.Clone(),
         Conversion = Conversion.Clone(),
         Watcher = Watcher.Clone()

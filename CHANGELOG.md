@@ -52,6 +52,13 @@ now in English.
 - **CSV export rounded every number to two decimals** (`0.##`), losing data on
   every round trip, and hard-coded German number formatting regardless of the
   chosen separator or encoding.
+- **Every application start erased the pattern lists.** The detection view model
+  assigned its sample text before loading the settings; the resulting change
+  notification re-ran the analysis, which wrote the still-empty editor grids back
+  over the stored header patterns and type rules. The next shutdown then saved the
+  emptied lists. Suspension is now scoped for the whole of construction, and
+  restores the previous state rather than clearing the flag, so a nested load
+  cannot re-enable it half way through.
 - **The Convert button stayed disabled after one conversion,** requiring a restart.
 - **"UTF-8" and "UTF-8 with BOM" produced identical output,** both with a BOM.
 - **Leading zeros were lost** on unquoted values unless a config override existed.
@@ -75,7 +82,11 @@ now in English.
   setting by default.
 - **Analysis panel** showing the encoding, separator candidates with their scores,
   the header signals with their reasoning, per-column types, and the first rows
-  laid out in aligned columns.
+  laid out in aligned columns. It is a collapsible drawer on the right edge,
+  resizable and remembered between sessions, with a one-line summary always
+  visible below the file list. It opens unprompted only when the detection was
+  ambiguous — a warning, a column of genuinely mixed values, or a header score
+  within a hair of the threshold — and says which of those it was.
 - **Extended detection settings**, all adjustable in the interface against a live
   sample: encoding confidence and fallback, separator candidates and consistency
   threshold, four individually weighted header signals with a score threshold,
@@ -93,6 +104,9 @@ now in English.
 - **Help tab** rendered natively instead of in the legacy `WebBrowser` control,
   which ran in an Internet Explorer compatibility mode and broke the stylesheet.
 - **Settings persistence**, replacing an empty `saveSettings()` stub.
+- **Self-contained single-file publish** via `-p:PublishProfile=win-x64`, yielding
+  one `DataWizard.exe` that needs no installed runtime. Replaces the ClickOnce
+  setup, which required a signing certificate that was never in the repository.
 - **133 tests** covering the engine and headless smoke tests that realise every
   tab, so a XAML error in an unopened tab cannot reach a release.
 
@@ -102,7 +116,16 @@ now in English.
   English. The previous build mixed German log messages and dialog filters with
   English labels.
 - Default header patterns are anchored on word boundaries. The old `.*id.*` also
-  matched "Bildname" and "Identity", so almost any text row looked like a header.
+  matched "Bildname" and "Identity", so almost any text row looked like a header,
+  and `part` matched "department".
+- The shipped rules now cover article, part and material numbers as text, carried
+  over from the pre-0.2 configuration - where the sample file had gained
+  `.*artikel.*`, `.*teil.*` and `^part$` that the shipped one lacked, evidently
+  after real data went wrong. The patterns are anchored rather than copied: as
+  written, `.*artikel.*` also matches "Artikelpreis" and `.*teil.*` matches
+  "Anteil", so both would have forced numeric columns to text. Also recovered from
+  the old configuration: `matnr`, the `teilnummer`/`teilenummer` spellings, a bare
+  `mail` column, and `count`.
 
 ## [1.0.0] - 2025-01-30
 

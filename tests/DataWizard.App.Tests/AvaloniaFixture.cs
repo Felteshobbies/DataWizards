@@ -30,7 +30,12 @@ public sealed class AvaloniaFixture : IDisposable
             Name = "Avalonia headless test thread"
         };
 
-        _uiThread.SetApartmentState(ApartmentState.STA);
+        // A single-threaded apartment is a Windows requirement (COM, and the
+        // clipboard and dialog APIs that sit on it); elsewhere the call is not
+        // supported at all.
+        if (OperatingSystem.IsWindows())
+            _uiThread.SetApartmentState(ApartmentState.STA);
+
         _uiThread.Start();
 
         if (!_ready.Wait(TimeSpan.FromSeconds(60)))

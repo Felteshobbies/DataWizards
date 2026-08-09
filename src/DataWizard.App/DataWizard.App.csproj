@@ -8,6 +8,40 @@
     <ApplicationIcon>Assets\wizard.ico</ApplicationIcon>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <!-- The application ships in English only; skip the framework's translations. -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <!--
+    Publish settings for `dotnet publish -r win-x64` without a profile. The
+    profiles under Properties/PublishProfiles repeat these, because a profile is
+    imported after the project body is evaluated and this condition is still
+    false at that point.
+
+    The condition keeps a plain `dotnet build` and `dotnet test` runtime-agnostic.
+  -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <!-- Avalonia carries native Skia and HarfBuzz libraries; without this they
+         sit next to the executable instead of inside it. -->
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <!--
+      Trimming is deliberately off. Avalonia's ViewLocator, the MVVM toolkit and
+      DocumentFormat.OpenXml all resolve types by reflection, so a trimmed build
+      fails at runtime rather than at build time - and only on the code path that
+      happens to need the removed type.
+    -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <AllowedReferenceRelatedFileExtensions>none</AllowedReferenceRelatedFileExtensions>
+    <!-- Culture data is required: number and date parsing is culture-driven. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,5 +64,19 @@
   <ItemGroup>
     <ProjectReference Include="..\DataWizard.Core\DataWizard.Core.csproj" />
   </ItemGroup>
+
+  <!--
+    Drop debug symbols from the published output.
+
+    SkiaSharp and HarfBuzzSharp ship .pdb files alongside their native libraries.
+    They arrive as native runtime assets rather than reference-related files, so
+    AllowedReferenceRelatedFileExtensions does not reach them - and together they
+    are larger than the application itself.
+  -->
+  <Target Name="RemoveSymbolsFromPublish" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Extension)' == '.pdb'" />
+    </ItemGroup>
+  </Target>
 
 </Project>
