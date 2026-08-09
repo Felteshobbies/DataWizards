@@ -392,6 +392,10 @@ public partial class ConvertViewModel : ViewModelBase
     partial void OnSelectedFileChanged(FileRow? value)
     {
         OnPropertyChanged(nameof(AnalysisSummary));
+
+        // Let the Detection tab offer to test its rules against this file.
+        _session.SetCurrentFile(value?.Direction == ConversionDirection.CsvToExcel ? value.Path : null);
+
         _ = RefreshPreviewAsync(value);
     }
 

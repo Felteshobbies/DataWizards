@@ -100,6 +100,11 @@ now in English.
 - **RFC 4180 record reader** handling quoted values that span several lines.
 - **Streaming XLSX writing** via `OpenXmlWriter`, plus bold and frozen header
   rows, optional auto-filter, and estimated column widths.
+- **The Detection tab's live sample follows the selected file.** Choosing a
+  delimited text file on the Convert tab loads its opening lines into the sample
+  box, so rules are tuned against real data rather than an invented example. Rows
+  typed by hand are never overwritten by a later selection; the file can still be
+  loaded on request, and the shipped example restored.
 - **Log tab** with severity filters, a text filter, follow-tail and copy.
 - **Help tab** rendered natively instead of in the legacy `WebBrowser` control,
   which ran in an Internet Explorer compatibility mode and broke the stylesheet.
@@ -118,6 +123,11 @@ now in English.
 - Default header patterns are anchored on word boundaries. The old `.*id.*` also
   matched "Bildname" and "Identity", so almost any text row looked like a header,
   and `part` matched "department".
+- Quantity columns default to decimal rather than whole numbers. A "Menge" is
+  routinely fractional - 2,5 kg, 1,75 m, part of a pack - so `menge`, `quantity`
+  and `qty` are declared decimal, which also keeps one consistent format across a
+  column whose sampled rows happen to be whole. Words naming a count of discrete
+  things (`anzahl`, `count`, `stk`, `pcs`) stay integer.
 - The shipped rules now cover article, part and material numbers as text, carried
   over from the pre-0.2 configuration - where the sample file had gained
   `.*artikel.*`, `.*teil.*` and `^part$` that the shipped one lacked, evidently

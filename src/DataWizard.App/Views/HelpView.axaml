@@ -90,6 +90,14 @@
                        Text="Set the mode to Always or Never to skip the scoring entirely. Use 'Skip leading lines' for files that start with a banner or comment block." />
 
             <!-- ══ Value types ══ -->
+            <TextBlock Text="The live sample" Classes="section" />
+            <TextBlock Classes="body"
+                       Text="The Detection tab keeps a few rows beside the settings and re-reads them after every change, so the effect of a setting is visible immediately rather than after a conversion." />
+            <TextBlock Classes="body"
+                       Text="Selecting a delimited text file on the Convert tab loads its opening lines here automatically, which means the rules can be tuned against real data instead of an invented example. The label above the box says where the rows came from. Typing into the box detaches it from the file, and from then on a new selection no longer replaces what you wrote - use 'Use selected file' to load it deliberately, or 'Built-in' to go back to the shipped example." />
+            <TextBlock Classes="body"
+                       Text="The rows are shown exactly as they are in the file, including any preamble that 'skip leading lines' would drop. That is deliberate: seeing the preamble is what explains why the setting is needed." />
+
             <TextBlock Text="Value types" Classes="section" />
             <TextBlock Classes="body"
                        Text="Excel needs to know whether a value is text, a number or a date, and getting it wrong destroys data. The defaults are chosen to protect identifiers:" />
@@ -110,6 +118,8 @@
                        Text="A rule forces a column to a type regardless of what its values look like. Rules are matched against the column name, or against a column position for files without a header, and the first match wins. A rule naming a position beats one matching a name." />
             <TextBlock Classes="body"
                        Text="Match modes are Contains, Exact, StartsWith, EndsWith and Regex. An invalid regular expression never matches rather than failing the conversion, so one broken rule cannot stop a batch." />
+            <TextBlock Classes="body"
+                       Text="The shipped rules keep identifiers as text (id, article, part and material numbers, postal codes, phone numbers, EAN and IBAN), treat prices as decimal, and treat quantities as decimal because a Menge is routinely fractional. Words naming a count of discrete things - anzahl, count, stk, pcs - stay whole numbers. Change any of it on this tab; nothing here is fixed." />
 
             <!-- ══ Watcher ══ -->
             <TextBlock Text="Folder watcher" Classes="section" />

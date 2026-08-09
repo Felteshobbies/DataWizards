@@ -135,6 +135,42 @@ public sealed class CsvAnalyzer
     }
 
     /// <summary>
+    /// Reads the opening lines of a file as text, decoded the way analysis would
+    /// decode it.
+    /// </summary>
+    /// <remarks>
+    /// Lines are returned exactly as they appear, including any preamble that
+    /// <see cref="DetectionSettings.SkipLeadingLines"/> would drop. Seeing the
+    /// preamble is the point: it is what explains why the setting is needed.
+    /// </remarks>
+    /// <param name="path">The file to read.</param>
+    /// <param name="maxLines">How many lines to return.</param>
+    public string ReadSampleText(string path, int maxLines = 25)
+    {
+        if (!File.Exists(path))
+            throw new FileNotFoundException("File not found.", path);
+
+        var encoding = EncodingDetector.Detect(path, _settings).Encoding;
+
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        using var reader = new StreamReader(stream, encoding, detectEncodingFromByteOrderMarks: true);
+
+        var builder = new StringBuilder();
+        var lines = 0;
+
+        while (lines < maxLines && reader.ReadLine() is { } line)
+        {
+            if (lines > 0)
+                builder.Append('\n');
+
+            builder.Append(line);
+            lines++;
+        }
+
+        return builder.ToString();
+    }
+
+    /// <summary>
     /// Analyses text held in memory. Used by the settings screen, which lets the
     /// user paste a few rows and watch the detection react.
     /// </summary>

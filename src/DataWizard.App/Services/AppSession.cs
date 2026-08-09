@@ -51,6 +51,29 @@ public sealed class AppSession
     /// <summary>Raised when the theme setting changes.</summary>
     public event EventHandler<ThemeMode>? ThemeChanged;
 
+    /// <summary>
+    /// The file currently selected on the Convert tab, or <c>null</c> when none is.
+    /// </summary>
+    /// <remarks>
+    /// Held here rather than passed between tabs so the Detection tab can offer to
+    /// test its rules against the file being worked on, without the two view
+    /// models having to know about each other.
+    /// </remarks>
+    public string? CurrentFilePath { get; private set; }
+
+    /// <summary>Raised when the Convert tab's selection changes.</summary>
+    public event EventHandler<string?>? CurrentFileChanged;
+
+    /// <summary>Records which file is selected and notifies anyone interested.</summary>
+    public void SetCurrentFile(string? path)
+    {
+        if (string.Equals(CurrentFilePath, path, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        CurrentFilePath = path;
+        CurrentFileChanged?.Invoke(this, path);
+    }
+
     /// <summary>Raised when a log entry is appended, so the log view can scroll.</summary>
     public event EventHandler<LogEntry>? LogAppended;
 

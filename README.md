@@ -91,7 +91,13 @@ confident.
 ## Detection settings
 
 Everything below is configurable on the **Detection** tab, and every change is
-applied immediately to a sample you can paste in beside it.
+applied immediately to a sample shown beside it.
+
+Selecting a delimited text file on the Convert tab loads its opening lines into
+that sample automatically, so the rules can be tuned against real data rather than
+an invented example. Typing into the box detaches it from the file, and a new
+selection then leaves your text alone; **Use selected file** loads it deliberately
+and **Built-in** restores the shipped example.
 
 ### Encoding
 

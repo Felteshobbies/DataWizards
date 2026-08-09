@@ -81,7 +81,7 @@ public class DefaultPatternTests
     [InlineData("artikelpreis", FieldDataType.Decimal)]
     [InlineData("artikel_preis", FieldDataType.Decimal)]
     [InlineData("article_price", FieldDataType.Decimal)]
-    [InlineData("artikelmenge", FieldDataType.Integer)]
+    [InlineData("artikelmenge", FieldDataType.Decimal)]
     public void TheLooseArticlePatternsDoNotSwallowPricesAndQuantities(string name, FieldDataType expected)
     {
         Assert.Equal(expected, RuleTypeFor(name));
@@ -119,10 +119,10 @@ public class DefaultPatternTests
     [InlineData("betrag", FieldDataType.Decimal)]
     [InlineData("amount", FieldDataType.Decimal)]
     [InlineData("kosten", FieldDataType.Decimal)]
-    [InlineData("menge", FieldDataType.Integer)]
-    [InlineData("quantity", FieldDataType.Integer)]
+    [InlineData("menge", FieldDataType.Decimal)]
+    [InlineData("quantity", FieldDataType.Decimal)]
     [InlineData("anzahl", FieldDataType.Integer)]
-    [InlineData("qty", FieldDataType.Integer)]
+    [InlineData("qty", FieldDataType.Decimal)]
     [InlineData("datum", FieldDataType.Date)]
     [InlineData("date", FieldDataType.Date)]
     [InlineData("geburtsdatum", FieldDataType.Date)]
@@ -130,6 +130,48 @@ public class DefaultPatternTests
     public void TypedColumnsKeepTheTypeTheOldConfigurationGaveThem(string name, FieldDataType expected)
     {
         Assert.Equal(expected, RuleTypeFor(name));
+    }
+
+    /// <summary>
+    /// A "Menge" is routinely fractional - 2,5 kg, 1,75 m, half a pack - so the
+    /// shipped rule declares it decimal. Words that name a count of discrete
+    /// things stay integer.
+    /// </summary>
+    [Theory]
+    [InlineData("menge", FieldDataType.Decimal)]
+    [InlineData("bestellmenge", FieldDataType.Decimal)]
+    [InlineData("liefermenge", FieldDataType.Decimal)]
+    [InlineData("quantity", FieldDataType.Decimal)]
+    [InlineData("order_quantity", FieldDataType.Decimal)]
+    [InlineData("qty", FieldDataType.Decimal)]
+    [InlineData("anzahl", FieldDataType.Integer)]
+    [InlineData("count", FieldDataType.Integer)]
+    [InlineData("stk", FieldDataType.Integer)]
+    [InlineData("pcs", FieldDataType.Integer)]
+    public void DivisibleQuantitiesAreDecimalAndDiscreteCountsAreInteger(string name, FieldDataType expected)
+    {
+        Assert.Equal(expected, RuleTypeFor(name));
+    }
+
+    /// <summary>
+    /// Declaring a column decimal never loses the value when it happens to be
+    /// whole; it only settles how Excel formats the column.
+    /// </summary>
+    [Fact]
+    public void ADecimalQuantityColumnStillCarriesWholeNumbers()
+    {
+        using var workspace = new TempWorkspace();
+        var path = workspace.WriteLines("quantities.csv",
+            "artikel;menge",
+            "A1;100",
+            "A2;2,5",
+            "A3;800");
+
+        var analysis = new CsvAnalyzer(Settings).Analyze(path);
+        var menge = analysis.Columns.Single(c => c.Name == "menge");
+
+        Assert.Equal(FieldDataType.Decimal, menge.EffectiveType);
+        Assert.Equal(["100", "2,5", "800"], analysis.SampleRecords.Skip(1).Select(r => r.ValueAt(1)));
     }
 
     // ── Header names ────────────────────────────────────────────────────────

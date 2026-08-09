@@ -40,6 +40,23 @@ public partial class DetectionViewModel : ViewModelBase
     private readonly DialogService _dialogs;
     private bool _suppressTest;
 
+    /// <summary>True while the sample is being replaced from code rather than typed.</summary>
+    private bool _updatingSample;
+
+    /// <summary>
+    /// Set once the sample has been typed into by hand. From then on the selected
+    /// file no longer replaces it automatically - overwriting something the user
+    /// wrote would be worse than showing a stale sample.
+    /// </summary>
+    private bool _sampleIsUserEdited;
+
+    /// <summary>The rows the tab falls back to when no file is selected.</summary>
+    private static readonly string BuiltInSample = string.Join(Environment.NewLine,
+        "customer_id;name;zip;price;order_date",
+        "00123;Widget Ltd;01067;19,99;31.01.2025",
+        "00456;Gadget GmbH;80331;4,50;01.02.2025",
+        "00789;Sprocket AG;20095;123,00;15.02.2025");
+
     [ObservableProperty]
     public partial string SampleText { get; set; }
 
@@ -69,11 +86,7 @@ public partial class DetectionViewModel : ViewModelBase
         // stored pattern lists with empty ones.
         using (SuspendTest())
         {
-            SampleText = string.Join(Environment.NewLine,
-                "customer_id;name;zip;price;order_date",
-                "00123;Widget Ltd;01067;19,99;31.01.2025",
-                "00456;Gadget GmbH;80331;4,50;01.02.2025",
-                "00789;Sprocket AG;20095;123,00;15.02.2025");
+            SetSample(BuiltInSample, sourcePath: null);
 
             LoadFromSettings();
 
@@ -82,6 +95,115 @@ public partial class DetectionViewModel : ViewModelBase
             DateFormats.CollectionChanged += OnRuleCollectionChanged;
         }
 
+        _session.CurrentFileChanged += OnCurrentFileChanged;
+
+        // A file may already be selected when this tab is first built.
+        if (_session.CurrentFilePath is { } current)
+            TryLoadSampleFrom(current, announce: false);
+
+        RunTest();
+    }
+
+    /// <summary>Path the sample came from, or <c>null</c> for the built-in rows.</summary>
+    [ObservableProperty]
+    public partial string? SampleSourcePath { get; set; }
+
+    /// <summary>Describes where the sample rows came from.</summary>
+    public string SampleSourceLabel => SampleSourcePath is null
+        ? "Built-in example rows"
+        : $"From {System.IO.Path.GetFileName(SampleSourcePath)}";
+
+    /// <summary>Whether the Convert tab has a delimited text file selected.</summary>
+    public bool HasSelectedFile => _session.CurrentFilePath is not null;
+
+    /// <summary>Whether the sample can be reset to the shipped example.</summary>
+    public bool CanUseBuiltInSample => SampleSourcePath is not null || _sampleIsUserEdited;
+
+    partial void OnSampleSourcePathChanged(string? value)
+    {
+        OnPropertyChanged(nameof(SampleSourceLabel));
+        OnPropertyChanged(nameof(CanUseBuiltInSample));
+    }
+
+    /// <summary>
+    /// Replaces the sample without it counting as a hand edit.
+    /// </summary>
+    private void SetSample(string text, string? sourcePath)
+    {
+        _updatingSample = true;
+
+        try
+        {
+            SampleText = text;
+        }
+        finally
+        {
+            _updatingSample = false;
+        }
+
+        SampleSourcePath = sourcePath;
+        _sampleIsUserEdited = false;
+        OnPropertyChanged(nameof(CanUseBuiltInSample));
+    }
+
+    private void OnCurrentFileChanged(object? sender, string? path)
+    {
+        OnPropertyChanged(nameof(HasSelectedFile));
+        LoadSampleFromFileCommand.NotifyCanExecuteChanged();
+
+        if (path is null || _sampleIsUserEdited)
+            return;
+
+        TryLoadSampleFrom(path, announce: false);
+    }
+
+    /// <summary>
+    /// Fills the sample from a file, leaving the current rows in place if it
+    /// cannot be read.
+    /// </summary>
+    private void TryLoadSampleFrom(string path, bool announce)
+    {
+        try
+        {
+            var text = new CsvAnalyzer(Detection).ReadSampleText(path);
+
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                if (announce)
+                    _session.Log(LogLevel.Warning, $"'{System.IO.Path.GetFileName(path)}' has no lines to sample.");
+
+                return;
+            }
+
+            SetSample(text, path);
+            RunTest();
+
+            if (announce)
+                _session.Log(LogLevel.Info, $"Detection sample taken from {System.IO.Path.GetFileName(path)}.");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FileNotFoundException)
+        {
+            _session.Log(LogLevel.Warning, $"Could not read '{path}' for the sample: {ex.Message}");
+        }
+    }
+
+    private bool CanLoadSampleFromFile() => HasSelectedFile;
+
+    /// <summary>
+    /// Loads the selected file into the sample box, overriding a hand edit - this
+    /// one is asked for explicitly.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanLoadSampleFromFile))]
+    private void LoadSampleFromFile()
+    {
+        if (_session.CurrentFilePath is { } path)
+            TryLoadSampleFrom(path, announce: true);
+    }
+
+    [RelayCommand]
+    private void UseBuiltInSample()
+    {
+        SetSample(BuiltInSample, sourcePath: null);
         RunTest();
     }
 
@@ -540,7 +662,17 @@ public partial class DetectionViewModel : ViewModelBase
         OnPropertyChanged(string.Empty);
     }
 
-    partial void OnSampleTextChanged(string value) => RunTest();
+    partial void OnSampleTextChanged(string value)
+    {
+        // Typing into the box detaches it from the file it came from.
+        if (!_updatingSample)
+        {
+            _sampleIsUserEdited = true;
+            SampleSourcePath = null;
+        }
+
+        RunTest();
+    }
 
     private void OnRuleCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {

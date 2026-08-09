@@ -180,11 +180,18 @@ public static class DefaultPatterns
         Rule("cost", MatchMode.Contains, FieldDataType.Decimal),
         Rule("kosten", MatchMode.Contains, FieldDataType.Decimal),
 
-        // Quantities
-        Rule("quantity", MatchMode.Contains, FieldDataType.Integer),
-        Rule("menge", MatchMode.Contains, FieldDataType.Integer),
+        // Quantities that can be fractional: weights, lengths, volumes and part
+        // units are all "Menge", and 2,5 kg is an ordinary value. Declaring the
+        // column decimal keeps one consistent Excel format across it, and covers
+        // the case where the sampled rows happen to be whole but later ones are
+        // not - analysis only ever sees the first few hundred rows.
+        Rule("quantity", MatchMode.Contains, FieldDataType.Decimal),
+        Rule("menge", MatchMode.Contains, FieldDataType.Decimal),
+        Rule(@"^qty$", MatchMode.Regex, FieldDataType.Decimal),
+
+        // Counts of discrete things, which cannot be fractional.
         Rule("anzahl", MatchMode.Contains, FieldDataType.Integer),
-        Rule(@"^(qty|stk|pcs)$", MatchMode.Regex, FieldDataType.Integer),
+        Rule(@"^(count|stk|stueck|pcs|pieces)$", MatchMode.Regex, FieldDataType.Integer),
 
         // Dates
         Rule("date", MatchMode.Contains, FieldDataType.Date),
