@@ -105,8 +105,10 @@ public sealed class DetectionSettings
     public string NumberCulture { get; set; } = "de-DE";
 
     /// <summary>
-    /// Accept grouping separators such as <c>1,234.56</c>. Off by default because
-    /// it makes <c>1.234</c> ambiguous between one thousand and a decimal.
+    /// Accept grouping separators such as <c>1,234,567</c>. Off by default because
+    /// it makes <c>1.234</c> ambiguous between one thousand and a decimal. Values
+    /// that contain both a dot and a comma (<c>1.234,56</c>, <c>1,234.56</c>) are
+    /// unambiguous and are read as numbers even when this is off.
     /// </summary>
     public bool AllowThousandsSeparator { get; set; }
 

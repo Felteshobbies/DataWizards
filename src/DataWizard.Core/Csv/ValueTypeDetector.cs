@@ -119,10 +119,19 @@ public sealed class ValueTypeDetector
         if (value.Length == 0)
             return false;
 
+        // A value that contains both a dot and a comma (for example
+        // <c>1.234,56</c> or <c>1,234.56</c>) uses one of them for grouping and
+        // the other for the decimal point. There is no other reading, so the
+        // grouping separator is accepted even when the setting is off. A bare
+        // <c>1.234</c> or <c>1,234</c> is genuinely ambiguous and stays governed
+        // by the setting.
+        var allowThousands = _settings.AllowThousandsSeparator
+                             || (value.Contains('.') && value.Contains(','));
+
         var styles = NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint |
                      NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite;
 
-        if (_settings.AllowThousandsSeparator)
+        if (allowThousands)
             styles |= NumberStyles.AllowThousands;
 
         var parsed = _settings.NumberFormat switch
@@ -134,13 +143,13 @@ public sealed class ValueTypeDetector
                 double.TryParse(value, styles, _numberCulture, out number),
 
             _ => double.TryParse(value, styles, CultureInfo.InvariantCulture, out number)
-                 || double.TryParse(value, styles, _numberCulture, out number)
+                  || double.TryParse(value, styles, _numberCulture, out number)
         };
 
         if (!parsed || double.IsNaN(number) || double.IsInfinity(number))
             return false;
 
-        isInteger = number == Math.Truncate(number) && !HasFractionalPart(value);
+        isInteger = number == Math.Truncate(number) && !HasFractionalPart(value, allowThousands);
         return true;
     }
 
@@ -244,7 +253,7 @@ public sealed class ValueTypeDetector
     /// a group of exactly three trailing digits is read as thousands grouping
     /// (<c>1,234</c>) rather than as a fraction (<c>1,23</c>).
     /// </summary>
-    private bool HasFractionalPart(string value)
+    private static bool HasFractionalPart(string value, bool allowThousands)
     {
         var index = value.LastIndexOfAny(['.', ',']);
         if (index < 0)
@@ -260,7 +269,7 @@ public sealed class ValueTypeDetector
                 return false;
         }
 
-        return !(_settings.AllowThousandsSeparator && digitsAfter == 3);
+        return !(allowThousands && digitsAfter == 3);
     }
 
     private static int CountDigits(string value)

@@ -191,9 +191,12 @@ public class ValueTypeDetectorTests
     }
 
     [Fact]
-    public void ThousandsSeparatorsAreRejectedUnlessEnabled()
+    public void GroupingSeparatorsAreRejectedUnlessEnabled()
     {
-        Assert.Equal(FieldDataType.Text, Detector().Detect("1,234.56").Type);
+        // "1,234,567" can only be read with a grouping separator, so without the
+        // setting it stays text. (A lone "1,234" is a German decimal and parses
+        // either way, so it is not the right probe for this setting.)
+        Assert.Equal(FieldDataType.Text, Detector().Detect("1,234,567").Type);
 
         var lenient = Detector(s =>
         {
@@ -201,7 +204,22 @@ public class ValueTypeDetectorTests
             s.NumberFormat = NumberFormatMode.Invariant;
         });
 
-        Assert.Equal(FieldDataType.Decimal, lenient.Detect("1,234.56").Type);
+        Assert.Equal(FieldDataType.Integer, lenient.Detect("1,234,567").Type);
+    }
+
+    [Fact]
+    public void ValuesWithBothSeparatorsAreNumbersEvenByDefault()
+    {
+        // "1.234,56" and "1,234.56" hold a dot and a comma, so one of them is
+        // grouping and the other the decimal point. There is no other reading,
+        // so they are numbers even with the setting off.
+        var german = Detector().Detect("1.234,56");
+        Assert.Equal(FieldDataType.Decimal, german.Type);
+        Assert.Equal(1234.56, german.Number, precision: 6);
+
+        var english = Detector().Detect("1,234.56");
+        Assert.Equal(FieldDataType.Decimal, english.Type);
+        Assert.Equal(1234.56, english.Number, precision: 6);
     }
 
     [Fact]
