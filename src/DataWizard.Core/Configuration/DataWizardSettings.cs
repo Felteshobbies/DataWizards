@@ -37,6 +37,9 @@ public sealed class DataWizardSettings
     /// <summary>Folder monitoring rules.</summary>
     public WatcherSettings Watcher { get; set; } = new();
 
+    /// <summary>Profile bookkeeping of the Diff tab.</summary>
+    public DiffSettings Diff { get; set; } = new();
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
@@ -89,6 +92,7 @@ public sealed class DataWizardSettings
             settings.Detection ??= new DetectionSettings();
             settings.Conversion ??= new ConversionSettings();
             settings.Watcher ??= new WatcherSettings();
+            settings.Diff ??= new DiffSettings();
             settings.Normalize();
             return settings;
         }
@@ -124,6 +128,7 @@ public sealed class DataWizardSettings
             settings.Detection ??= new DetectionSettings();
             settings.Conversion ??= new ConversionSettings();
             settings.Watcher ??= new WatcherSettings();
+            settings.Diff ??= new DiffSettings();
             settings.Normalize();
             return settings;
         }
@@ -162,6 +167,7 @@ public sealed class DataWizardSettings
         Detection.Normalize();
         Conversion.Normalize();
         Watcher.Rules ??= [];
+        Diff.Normalize();
         AnalysisPanelWidth = Math.Clamp(AnalysisPanelWidth, 320d, 900d);
     }
 
@@ -174,6 +180,7 @@ public sealed class DataWizardSettings
         AnalysisPanelWidth = AnalysisPanelWidth,
         Detection = Detection.Clone(),
         Conversion = Conversion.Clone(),
-        Watcher = Watcher.Clone()
+        Watcher = Watcher.Clone(),
+        Diff = Diff.Clone()
     };
 }

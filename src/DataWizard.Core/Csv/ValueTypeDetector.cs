@@ -218,7 +218,12 @@ public sealed class ValueTypeDetector
     /// part of the identifier. A single leading zero before a decimal separator
     /// (<c>0.5</c>) does not count.
     /// </summary>
-    private static bool HasSignificantLeadingZero(string value)
+    /// <remarks>
+    /// Public because the diff engine needs the same rule: <c>00123</c> and
+    /// <c>123</c> are different values, and comparing them as numbers would
+    /// hide the difference.
+    /// </remarks>
+    public static bool HasSignificantLeadingZero(string value)
     {
         var index = 0;
 

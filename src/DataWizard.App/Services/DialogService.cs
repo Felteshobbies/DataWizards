@@ -82,6 +82,30 @@ public sealed class DialogService
         return folders.Count > 0 ? folders[0].TryGetLocalPath() : null;
     }
 
+    /// <summary>Asks for one table file, a CSV or an XLSX, for the Diff tab.</summary>
+    public async Task<string?> PickTableFileAsync(string title)
+    {
+        var topLevel = _topLevel();
+        if (topLevel is null)
+            return null;
+
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = title,
+            AllowMultiple = false,
+            FileTypeFilter =
+            [
+                new FilePickerFileType("Tables")
+                {
+                    Patterns = ConversionService.SupportedExtensions.Select(e => "*" + e).ToArray()
+                },
+                FilePickerFileTypes.All
+            ]
+        });
+
+        return files.Count > 0 ? files[0].TryGetLocalPath() : null;
+    }
+
     /// <summary>Asks for a file to read settings or a legacy configuration from.</summary>
     public async Task<string?> PickOpenFileAsync(string title, string extension, string description)
     {

@@ -83,6 +83,10 @@
                 <views:ConvertView DataContext="{Binding Convert}" />
             </TabItem>
 
+            <TabItem Header="Diff">
+                <views:DiffView DataContext="{Binding Diff}" />
+            </TabItem>
+
             <TabItem Header="Detection">
                 <views:DetectionView DataContext="{Binding Detection}" />
             </TabItem>

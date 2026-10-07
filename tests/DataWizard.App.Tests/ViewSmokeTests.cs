@@ -52,7 +52,7 @@ public class ViewSmokeTests(AvaloniaFixture fixture)
 
             var tabs = window.GetVisualDescendants().OfType<TabControl>().Single();
 
-            Assert.Equal(6, tabs.Items.Count);
+            Assert.Equal(7, tabs.Items.Count);
 
             window.Close();
         });
@@ -65,6 +65,7 @@ public class ViewSmokeTests(AvaloniaFixture fixture)
     [InlineData(3)]
     [InlineData(4)]
     [InlineData(5)]
+    [InlineData(6)]
     public void EveryTabRealisesWithoutError(int tabIndex)
     {
         _fixture.Invoke(() =>

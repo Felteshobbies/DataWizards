@@ -123,6 +123,152 @@ public sealed class ExcelReader
             .ToArray();
     }
 
+    /// <summary>One worksheet read into memory as normalised strings.</summary>
+    /// <param name="SheetName">The worksheet that was read.</param>
+    /// <param name="Rows">The rows, widest row first to last, gaps filled with empty strings.</param>
+    public readonly record struct ExcelSheetGrid(string SheetName, string[][] Rows);
+
+    /// <summary>
+    /// Reads one worksheet into a two-dimensional array of strings without
+    /// writing anything to disk.
+    /// </summary>
+    /// <remarks>
+    /// Values are normalised to a culture-free form: numbers come out invariant
+    /// (<c>19.99</c>), date-styled cells as ISO timestamps and booleans as
+    /// <c>TRUE</c>/<c>FALSE</c>. That is what lets the diff engine compare a
+    /// workbook against a CSV file written in a different culture. Rows that
+    /// hold no cells at all are skipped, because a worksheet cannot say where a
+    /// fully empty row once was.
+    /// </remarks>
+    public static ExcelSheetGrid ReadSheet(string xlsxPath, int sheetIndex = 0)
+    {
+        if (!File.Exists(xlsxPath))
+            throw new FileNotFoundException("Excel file not found.", xlsxPath);
+
+        using var document = SpreadsheetDocument.Open(xlsxPath, false);
+        var workbookPart = document.WorkbookPart
+            ?? throw new InvalidDataException($"'{xlsxPath}' has no workbook part and is not a valid XLSX file.");
+
+        var sheets = workbookPart.Workbook?.Descendants<Sheet>().ToList() ?? [];
+
+        if (sheets.Count == 0)
+            throw new InvalidDataException($"'{xlsxPath}' contains no worksheets.");
+
+        var sheet = sheets.ElementAtOrDefault(sheetIndex)
+            ?? throw new ArgumentOutOfRangeException(
+                nameof(sheetIndex),
+                $"Worksheet index {sheetIndex} is out of range; the workbook has {sheets.Count}.");
+
+        var sheetName = sheet.Name?.Value ?? "Sheet";
+
+        if (sheet.Id?.Value is null)
+            return new ExcelSheetGrid(sheetName, []);
+
+        var sharedStrings = ReadSharedStrings(workbookPart);
+        var styles = ReadStyleFormats(workbookPart);
+        var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id!.Value!);
+
+        var rows = new List<string[]>();
+
+        using var reader = OpenXmlReader.Create(worksheetPart);
+
+        while (reader.Read())
+        {
+            if (reader.ElementType != typeof(Row) || !reader.IsStartElement)
+                continue;
+
+            var row = (Row)reader.LoadCurrentElement()!;
+            var cells = row.Elements<Cell>().ToList();
+
+            if (cells.Count == 0)
+                continue;
+
+            var byColumn = new Dictionary<int, Cell>(cells.Count);
+            var maxColumn = -1;
+
+            for (var i = 0; i < cells.Count; i++)
+            {
+                var cell = cells[i];
+                var column = cell.CellReference?.Value is { } reference
+                    ? ColumnIndex(reference)
+                    : i;
+
+                byColumn[column] = cell;
+                maxColumn = Math.Max(maxColumn, column);
+            }
+
+            var values = new string[maxColumn + 1];
+
+            for (var column = 0; column <= maxColumn; column++)
+            {
+                values[column] = byColumn.TryGetValue(column, out var cell)
+                    ? ReadNormalizedCellValue(cell, sharedStrings, styles)
+                    : string.Empty;
+            }
+
+            rows.Add(values);
+        }
+
+        return new ExcelSheetGrid(sheetName, [.. rows]);
+    }
+
+    /// <summary>
+    /// Reads a cell into its culture-free string form. Unlike
+    /// <see cref="ReadCellValue"/> the result never depends on the output
+    /// settings, because the goal is comparison, not presentation.
+    /// </summary>
+    private static string ReadNormalizedCellValue(Cell cell, string[] sharedStrings, StyleFormat[] styles)
+    {
+        var dataType = cell.DataType?.Value;
+
+        if (dataType == CellValues.InlineString)
+            return cell.InlineString?.Text?.Text ?? string.Empty;
+
+        if (dataType == CellValues.SharedString)
+        {
+            var raw = cell.CellValue?.InnerText;
+
+            if (int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var index)
+                && index >= 0 && index < sharedStrings.Length)
+            {
+                return sharedStrings[index];
+            }
+
+            return raw ?? string.Empty;
+        }
+
+        var text = cell.CellValue?.InnerText;
+
+        if (string.IsNullOrEmpty(text))
+            return string.Empty;
+
+        if (dataType == CellValues.Boolean)
+            return text == "1" ? "TRUE" : "FALSE";
+
+        if (dataType == CellValues.Error)
+            return text;
+
+        if (dataType == CellValues.String)
+            return text;
+
+        if (!double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var number))
+            return text;
+
+        if (IsDateStyled(cell, styles))
+        {
+            try
+            {
+                return DateTime.FromOADate(number).ToString("o", CultureInfo.InvariantCulture);
+            }
+            catch (ArgumentException)
+            {
+                // Out of the range Excel dates can express - keep it as a number.
+            }
+        }
+
+        return number.ToString("R", CultureInfo.InvariantCulture);
+    }
+
     private int ExportSheet(
         WorkbookPart workbookPart,
         Sheet sheet,

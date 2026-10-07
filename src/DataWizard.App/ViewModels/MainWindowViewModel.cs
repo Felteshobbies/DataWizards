@@ -33,6 +33,7 @@ public partial class MainWindowViewModel : ViewModelBase
         var dialogs = new DialogService(topLevel);
 
         Convert = new ConvertViewModel(session, dialogs);
+        Diff = new DiffViewModel(session, dialogs);
         Detection = new DetectionViewModel(session, dialogs);
         Output = new OutputViewModel(session, dialogs);
         Watcher = new WatcherViewModel(session, dialogs);
@@ -43,6 +44,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
     /// <summary>The Convert tab.</summary>
     public ConvertViewModel Convert { get; }
+
+    /// <summary>The Diff tab.</summary>
+    public DiffViewModel Diff { get; }
 
     /// <summary>The Detection tab.</summary>
     public DetectionViewModel Detection { get; }
