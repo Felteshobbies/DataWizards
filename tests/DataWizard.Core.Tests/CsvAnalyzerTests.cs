@@ -310,6 +310,43 @@ public class CsvAnalyzerTests
         Assert.True(analysis.Columns[1].IsMixed);
     }
 
+    /// <summary>
+    /// Whole numbers and decimals are one family: a column of "12" and "0,45"
+    /// must come out decimal, not text, no matter which kind is the majority.
+    /// </summary>
+    [Fact]
+    public void AColumnOfIntegersAndDecimalsIsDecimal()
+    {
+        using var workspace = new TempWorkspace();
+        // One column is mostly whole numbers, the other mostly decimals; both
+        // mix the two kinds, so both must come out decimal.
+        var path = workspace.WriteLines("mixed.csv",
+            "id;mostly_integers;mostly_decimals",
+            "A1;1;0,45",
+            "B2;2;0,89",
+            "C3;0,5;500");
+
+        var analysis = new CsvAnalyzer(Settings()).Analyze(path);
+
+        Assert.Equal(FieldDataType.Decimal, analysis.Columns[1].EffectiveType);
+        Assert.Equal(FieldDataType.Decimal, analysis.Columns[2].EffectiveType);
+    }
+
+    [Fact]
+    public void AColumnOfOnlyIntegersStaysInteger()
+    {
+        using var workspace = new TempWorkspace();
+        var path = workspace.WriteLines("ints.csv",
+            "id;total",
+            "A1;3",
+            "B2;12",
+            "C3;1");
+
+        var analysis = new CsvAnalyzer(Settings()).Analyze(path);
+
+        Assert.Equal(FieldDataType.Integer, analysis.Columns[1].EffectiveType);
+    }
+
     [Fact]
     public void AnalyzeTextWorksWithoutAFile()
     {

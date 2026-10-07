@@ -339,18 +339,22 @@ public sealed class CsvAnalyzer
         if (counts.TryGetValue(FieldDataType.Text, out var textCount) && textCount > 0)
             return FieldDataType.Text;
 
+        // Integer and decimal are one family: Excel stores both as numbers, and a
+        // decimal format renders whole numbers unchanged. A column of "12" and
+        // "0,45" is a decimal column, not a text column - even when the integers
+        // are the majority.
+        var numeric = counts.GetValueOrDefault(FieldDataType.Integer)
+                    + counts.GetValueOrDefault(FieldDataType.Decimal);
+
+        if (numeric == total)
+            return counts.GetValueOrDefault(FieldDataType.Decimal) > 0
+                ? FieldDataType.Decimal
+                : FieldDataType.Integer;
+
         var dominant = counts.OrderByDescending(kvp => kvp.Value).First();
 
         if ((double)dominant.Value / total < 0.9)
             return FieldDataType.Text;
-
-        // Whole numbers mixed into a decimal column stay decimal, so the column
-        // keeps one consistent Excel format.
-        if (dominant.Key == FieldDataType.Integer &&
-            counts.TryGetValue(FieldDataType.Decimal, out var decimals) && decimals > 0)
-        {
-            return FieldDataType.Decimal;
-        }
 
         return dominant.Key;
     }

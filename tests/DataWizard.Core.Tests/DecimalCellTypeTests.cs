@@ -94,6 +94,37 @@ public class DecimalCellTypeTests
         Assert.Equal("number", types[^1]);
     }
 
+    /// <summary>
+    /// A column mixing whole numbers and decimals (12 next to 2,75) used to be
+    /// classified as text because neither kind reached the dominance threshold
+    /// on its own. Every value must still end up as a number cell.
+    /// </summary>
+    [Fact]
+    public void AColumnMixingIntegersAndDecimalsBecomesNumberCells()
+    {
+        using var workspace = new TempWorkspace();
+        // The column names are deliberately neutral: "menge" and "preis" would
+        // match the built-in field rules and settle the type without detection.
+        var source = workspace.WriteLines("prices.csv",
+            "id;c2;c3",
+            "E-EURO;12;2,75",
+            "Kabel;0,45;125,5",
+            "Schrauben;0,89;500");
+
+        var result = new ConversionService(Settings()).Convert(source);
+        Assert.True(result.Success, result.ErrorMessage);
+
+        Assert.Equal(FieldDataType.Decimal, result.Analysis!.Columns[1].EffectiveType);
+        Assert.Equal(FieldDataType.Decimal, result.Analysis.Columns[2].EffectiveType);
+
+        var (values, types) = ReadSheet(result.OutputPaths[0]);
+
+        Assert.Equal(["id", "c2", "c3", "E-EURO", "12", "2.75",
+                      "Kabel", "0.45", "125.5", "Schrauben", "0.89", "500"], values);
+        Assert.Equal(["text", "text", "text", "text", "number", "number",
+                      "text", "number", "number", "text", "number", "number"], types);
+    }
+
     [Fact]
     public void PlainGermanDecimalsStayNumberCells()
     {
